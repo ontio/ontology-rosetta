@@ -1,2 +1,2 @@
 # ontology-rosetta
-Ontology node which follows Coinbase Rosetta Blockchain Standard
+Ontology node which follows Rosetta Blockchain Standard
