@@ -72,18 +72,18 @@ func setupAPP() *cli.App {
 	app.Version = config.Version
 	app.Copyright = "Copyright in 2018 The Ontology Authors"
 	app.Commands = []cli.Command{
-		cmd.AccountCommand,
-		cmd.InfoCommand,
-		cmd.AssetCommand,
-		cmd.ContractCommand,
+		//cmd.AccountCommand,
+		//cmd.InfoCommand,
+		//cmd.AssetCommand,
+		//cmd.ContractCommand,
 		cmd.ImportCommand,
 		cmd.ExportCommand,
-		cmd.TxCommond,
-		cmd.SigTxCommand,
-		cmd.MultiSigAddrCommand,
-		cmd.MultiSigTxCommand,
-		cmd.SendTxCommand,
-		cmd.ShowTxCommand,
+		//cmd.TxCommond,
+		//cmd.SigTxCommand,
+		//cmd.MultiSigAddrCommand,
+		//cmd.MultiSigTxCommand,
+		//cmd.SendTxCommand,
+		//cmd.ShowTxCommand,
 	}
 	app.Flags = []cli.Flag{
 		//common setting
@@ -94,12 +94,12 @@ func setupAPP() *cli.App {
 		utils.DataDirFlag,
 		utils.WasmVerifyMethodFlag,
 		//account setting
-		utils.WalletFileFlag,
-		utils.AccountAddressFlag,
-		utils.AccountPassFlag,
+		//utils.WalletFileFlag,
+		//utils.AccountAddressFlag,
+		//utils.AccountPassFlag,
 		//consensus setting
-		utils.EnableConsensusFlag,
-		utils.MaxTxInBlockFlag,
+		//utils.EnableConsensusFlag,
+		//utils.MaxTxInBlockFlag,
 		//txpool setting
 		utils.GasPriceFlag,
 		utils.GasLimitFlag,
@@ -116,20 +116,20 @@ func setupAPP() *cli.App {
 		utils.MaxConnOutBoundFlag,
 		utils.MaxConnInBoundForSingleIPFlag,
 		//test mode setting
-		utils.EnableTestModeFlag,
-		utils.TestModeGenBlockTimeFlag,
+		//utils.EnableTestModeFlag,
+		//utils.TestModeGenBlockTimeFlag,
 		//rpc setting
-		utils.RPCDisabledFlag,
-		utils.RPCPortFlag,
-		utils.RPCLocalEnableFlag,
-		utils.RPCLocalProtFlag,
+		//utils.RPCDisabledFlag,
+		//utils.RPCPortFlag,
+		//utils.RPCLocalEnableFlag,
+		//utils.RPCLocalProtFlag,
 		//rest setting
-		utils.RestfulEnableFlag,
-		utils.RestfulPortFlag,
-		utils.RestfulMaxConnsFlag,
+		//utils.RestfulEnableFlag,
+		//utils.RestfulPortFlag,
+		//utils.RestfulMaxConnsFlag,
 		//ws setting
-		utils.WsEnabledFlag,
-		utils.WsPortFlag,
+		//utils.WsEnabledFlag,
+		//utils.WsPortFlag,
 	}
 	app.Before = func(context *cli.Context) error {
 		runtime.GOMAXPROCS(runtime.NumCPU())
@@ -406,7 +406,7 @@ func initLocalRpc(ctx *cli.Context) error {
 //start rosetta-node restful
 
 func initRoseRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Store, error) {
-	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName + "/accstore" )
+	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName+"/accstore")
 	store, err := store.NewStore(dbDir)
 	if err != nil {
 		log.Error("newStore err:%s", err)
