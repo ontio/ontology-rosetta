@@ -137,7 +137,10 @@ func setupAPP() *cli.App {
 	}
 	return app
 }
-
+//modify go.mod ontology version need change ONTOLOGY_VERSION
+var (
+	ONTOLOGY_VERSION = "1.9.0"
+)
 func main() {
 	if err := setupAPP().Run(os.Args); err != nil {
 		cmd.PrintErrorMsg(err.Error())
@@ -149,7 +152,7 @@ func startOntology(ctx *cli.Context) {
 	initLog(ctx)
 	rcfg.InitConfig()
 
-	log.Infof("ontology version %s", config.Version)
+	log.Infof("ontology version %s", ONTOLOGY_VERSION)
 
 	setMaxOpenFiles()
 
