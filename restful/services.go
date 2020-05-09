@@ -19,15 +19,16 @@ package services
 
 import (
 	"fmt"
-	db "github.com/ontio/ontology-rosetta/store"
-	"github.com/ontio/ontology/p2pserver"
 	"net/http"
 
 	"github.com/coinbase/rosetta-sdk-go/asserter"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/restful/services"
+	db "github.com/ontio/ontology-rosetta/store"
+	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
+	"github.com/ontio/ontology/p2pserver"
 )
 
 // NewBlockchainRouter creates a Mux http.Handler from a collection
@@ -66,7 +67,7 @@ func NewBlockchainRouter(
 func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store) {
 	network := &types.NetworkIdentifier{
 		Blockchain: "ont",
-		Network:    "Testnet",
+		Network:    config.DefConfig.P2PNode.NetworkName,
 	}
 
 	// The asserter automatically rejects incorrectly formatted

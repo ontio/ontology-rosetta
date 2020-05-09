@@ -19,6 +19,7 @@ package services
 
 import (
 	"context"
+
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/utils"
@@ -30,7 +31,7 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 )
 
-type ConstructionAPIService struct {
+type ConstructionAPIService struct {	
 	network *types.NetworkIdentifier
 }
 
