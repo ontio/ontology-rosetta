@@ -65,11 +65,18 @@ func NewBlockchainRouter(
 }
 
 func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store) {
+	networkName := "mainnet"
+	if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_MAIN_NET {
+		networkName = "mainnet"
+	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_POLARIS_NET {
+		networkName = "testnet"
+	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_SOLO_NET {
+		networkName = "prinet"
+	}
 	network := &types.NetworkIdentifier{
 		Blockchain: "ont",
-		Network:    config.DefConfig.P2PNode.NetworkName,
+		Network:    networkName,
 	}
-
 	// The asserter automatically rejects incorrectly formatted
 	// requests.
 	asserter, err := asserter.NewServer([]*types.NetworkIdentifier{network})
