@@ -71,7 +71,7 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_POLARIS_NET {
 		networkName = "testnet"
 	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_SOLO_NET {
-		networkName = "prinet"
+		networkName = "privatenet"
 	}
 	network := &types.NetworkIdentifier{
 		Blockchain: "ont",
