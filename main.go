@@ -406,7 +406,8 @@ func initLocalRpc(ctx *cli.Context) error {
 //start rosetta-node restful
 
 func initRoseRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Store, error) {
-	store, err := store.NewStore("./acc_store/" + config.DefConfig.P2PNode.NetworkName)
+	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName + "/accstore" )
+	store, err := store.NewStore(dbDir)
 	if err != nil {
 		log.Error("newStore err:%s", err)
 		return nil, err
