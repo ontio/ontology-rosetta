@@ -31,7 +31,7 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 )
 
-type ConstructionAPIService struct {	
+type ConstructionAPIService struct {
 	network *types.NetworkIdentifier
 }
 
