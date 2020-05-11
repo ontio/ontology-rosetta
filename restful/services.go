@@ -33,6 +33,13 @@ import (
 
 // NewBlockchainRouter creates a Mux http.Handler from a collection
 // of server controllers.
+var(
+	BLOCKCHAIN = "ont"
+	MAINNET = "mainnet"
+	TESTNET = "testnet"
+	PRIVATENET = "privatenet"
+)
+
 func NewBlockchainRouter(
 	network *types.NetworkIdentifier,
 	asserter *asserter.Asserter,
@@ -65,16 +72,16 @@ func NewBlockchainRouter(
 }
 
 func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store) {
-	networkName := "mainnet"
+	networkName := "unnkown"
 	if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_MAIN_NET {
-		networkName = "mainnet"
+		networkName = MAINNET
 	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_POLARIS_NET {
-		networkName = "testnet"
+		networkName = TESTNET
 	} else if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_SOLO_NET {
-		networkName = "privatenet"
+		networkName = PRIVATENET
 	}
 	network := &types.NetworkIdentifier{
-		Blockchain: "ont",
+		Blockchain: BLOCKCHAIN,
 		Network:    networkName,
 	}
 	// The asserter automatically rejects incorrectly formatted
