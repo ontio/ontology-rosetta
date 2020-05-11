@@ -20,7 +20,6 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/ontio/ontology/smartcontract/event"
 	"strings"
 
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
@@ -31,6 +30,7 @@ import (
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
+	"github.com/ontio/ontology/smartcontract/event"
 )
 
 var (
@@ -189,64 +189,92 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 			m := string(method)
 
 			if len(states) == 4 && strings.ToLower(m) == config.OP_TYPE_TRANSFER { //['transfer',from,to,amount]
-
-				//all mint token transfer should ignore
-				if len(states[1].(string)) == 0 || states[1].(string) == "00" {
-					continue
-				}
-
-				fromOpt := new(rtypes.Operation)
-				fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
-					Index: int64(idx * 2),
-					//NetworkIndex: nil,
-				}
-				fromOpt.Status = result
-				fromOpt.Type = config.OP_TYPE_TRANSFER // this should always be "transfer"
-				amount := new(rtypes.Amount)
 				amtbytes, err := hex.DecodeString(states[3].(string))
 				if err != nil {
 					return nil, err
 				}
 				amt := common.BigIntFromNeoBytes(amtbytes)
-				amount.Value = fmt.Sprintf("-%d", amt.Int64())
-				amount.Currency = GetCurrency(contractAddress)
-				fromOpt.Amount = amount
+				subacc := &rtypes.SubAccountIdentifier{Address: contractAddress}
 
-				fromAcctAddr, err := common.AddressFromHexString(states[1].(string))
-				if err != nil {
-					return nil, err
-				}
-				fromOpt.Account = &rtypes.AccountIdentifier{
-					Address: fromAcctAddr.ToBase58(),
-				}
-
-				//toOpt
-				toOpt := new(rtypes.Operation)
-				toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
-					Index: int64(idx*2 + 1),
-					//NetworkIndex: nil,
-				}
-				toOpt.RelatedOperations = []*rtypes.OperationIdentifier{
-					{
+				//all mint token transfer should ignore
+				if len(states[1].(string)) > 0 && states[1].(string) != "00" {
+					fromOpt := new(rtypes.Operation)
+					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
-					},
-				}
-				toOpt.Type = config.OP_TYPE_TRANSFER
-				toOpt.Status = result
-				toAmount := new(rtypes.Amount)
-				toAmount.Value = fmt.Sprintf("%d", amt.Int64())
-				toAmount.Currency = GetCurrency(contractAddress)
-				toOpt.Amount = toAmount
+						//NetworkIndex: nil,
+					}
+					fromOpt.Status = result
+					fromOpt.Type = config.OP_TYPE_TRANSFER // this should always be "transfer"
+					amount := new(rtypes.Amount)
 
-				toAcctAddr, err := common.AddressFromHexString(states[2].(string))
-				if err != nil {
-					return nil, err
+					amount.Value = fmt.Sprintf("-%d", amt.Int64())
+					amount.Currency = GetCurrency(contractAddress)
+					fromOpt.Amount = amount
+					addrFromTmp, _ := common.HexToBytes(states[1].(string))
+					fromAcctAddr, err := common.AddressParseFromBytes(addrFromTmp)
+					if err != nil {
+						return nil, err
+					}
+					fromOpt.Account = &rtypes.AccountIdentifier{
+						Address:    fromAcctAddr.ToBase58(),
+						SubAccount: subacc,
+					}
+					//toOpt
+					toOpt := new(rtypes.Operation)
+					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
+						Index: int64(idx*2 + 1),
+						//NetworkIndex: nil,
+					}
+					toOpt.RelatedOperations = []*rtypes.OperationIdentifier{
+						{
+							Index: int64(idx * 2),
+						},
+					}
+					toOpt.Type = config.OP_TYPE_TRANSFER
+					toOpt.Status = result
+					toAmount := new(rtypes.Amount)
+					toAmount.Value = fmt.Sprintf("%d", amt.Int64())
+					toAmount.Currency = GetCurrency(contractAddress)
+					toOpt.Amount = toAmount
+
+					addrToTmp, _ := common.HexToBytes(states[2].(string))
+					toAcctAddr, err := common.AddressParseFromBytes(addrToTmp)
+					if err != nil {
+						return nil, err
+					}
+					toOpt.Account = &rtypes.AccountIdentifier{
+						Address:    toAcctAddr.ToBase58(),
+						SubAccount: subacc,
+					}
+					opts = append(opts, fromOpt, toOpt)
+					idx += 1
+				} else {
+					//toOpt
+					toOpt := new(rtypes.Operation)
+					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
+						Index: int64(idx * 2),
+						//NetworkIndex: nil,
+					}
+
+					toOpt.Type = config.OP_TYPE_TRANSFER
+					toOpt.Status = result
+					toAmount := new(rtypes.Amount)
+					toAmount.Value = fmt.Sprintf("%d", amt.Int64())
+					toAmount.Currency = GetCurrency(contractAddress)
+					toOpt.Amount = toAmount
+
+					addrToTmp, _ := common.HexToBytes(states[2].(string))
+					toAcctAddr, err := common.AddressParseFromBytes(addrToTmp)
+					if err != nil {
+						return nil, err
+					}
+					toOpt.Account = &rtypes.AccountIdentifier{
+						Address:    toAcctAddr.ToBase58(),
+						SubAccount: subacc,
+					}
+					opts = append(opts, toOpt)
+					idx += 1
 				}
-				toOpt.Account = &rtypes.AccountIdentifier{
-					Address: toAcctAddr.ToBase58(),
-				}
-				opts = append(opts, fromOpt, toOpt)
-				idx += 1
 			}
 
 		}
