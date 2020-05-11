@@ -21,7 +21,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-
+	"github.com/ontio/ontology/common/log"
+	"github.com/ontio/ontology/smartcontract/event"
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common"
@@ -30,7 +31,6 @@ import (
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
-	"github.com/ontio/ontology/smartcontract/event"
 )
 
 var (
@@ -63,11 +63,14 @@ func InitCurrencies() error {
 	for _, scriptHash := range config.Conf.MonitorOEP4ScriptHash {
 		symbol, err := GetSymbol(scriptHash)
 		if err != nil {
-			return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
+			log.Error("get symbol from contract:%s ,failed:%s", scriptHash, err)
+			continue
+			//return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 		}
 		decimal, err := GetDecimals(scriptHash)
 		if err != nil {
-			return fmt.Errorf("get decimal from contract:%s ,failed:%s", scriptHash, err)
+			log.Error("get Decimals from contract:%s ,failed:%s", scriptHash, err)
+			continue
 		}
 		metdata := GetMetatdata(scriptHash)
 		Currencies[strings.ToLower(scriptHash)] = &rtypes.Currency{
@@ -329,7 +332,7 @@ func GetDecimals(contractAddr string) (int32, error) {
 		}
 		return int32(common.BigIntFromNeoBytes(bs).Int64()), nil
 	}
-	return -1, fmt.Errorf("not a supported contract")
+	return 0, fmt.Errorf("not a supported contract")
 }
 
 func GetSymbol(contractAddr string) (string, error) {
@@ -370,7 +373,27 @@ func GetMetatdata(contractAddr string) map[string]interface{} {
 }
 
 func GetCurrency(contractAddress string) *rtypes.Currency {
-	return Currencies[strings.ToLower(contractAddress)]
+	c, ok := Currencies[strings.ToLower(contractAddress)]
+	if !ok {
+
+		symbol, err := GetSymbol(contractAddress)
+		if err != nil {
+			return nil
+		}
+		decimal, err := GetDecimals(contractAddress)
+		if err != nil {
+			return nil
+		}
+
+		currency := &rtypes.Currency{
+			Symbol:   symbol,
+			Decimals: decimal,
+			Metadata: GetMetatdata(contractAddress),
+		}
+		Currencies[strings.ToLower(contractAddress)] = currency
+		return currency
+	}
+	return c
 }
 
 func VerifyNetworkIdentifier(this *rtypes.NetworkIdentifier, that *rtypes.NetworkIdentifier) bool {

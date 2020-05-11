@@ -20,6 +20,8 @@ package config
 import (
 	"encoding/json"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/ontio/ontology/cmd/utils"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"os"
 )
@@ -39,18 +41,33 @@ var (
 )
 
 type Config struct {
-	Rosetta               *RosettaConfig `json:"rosetta"`
-	OntologVersion        string         `json:"ontologyVersion"`
-	MonitorOEP4ScriptHash []string       `json:"monitorOEP4ScriptHash"`
+	Rosetta *RosettaConfig `json:"rosetta"`
+	//OntologVersion        string         `json:"ontologyVersion"`
+	MonitorOEP4ScriptHash []string `json:"monitorOEP4ScriptHash"`
 }
 
 type RosettaConfig struct {
 	Version string `json:"version"`
-	Port    string `json:"port"`
+	Port    int32  `json:"port"`
 }
 
-func InitConfig() {
-	cfile, err := os.Open("./rosetta-config.json")
+const (
+	ONTOLOGY_VERSION = "1.9.0"
+	ROSETTA_CONFIG   = "./rosetta-config.json"
+)
+
+var (
+	RosettaConfigFlag = cli.StringFlag{
+		Name:  "rosetta-config",
+		Value: ROSETTA_CONFIG,
+		Usage: "rosetta config `<file>`. If doesn't specifies, use ./rosetta-config.json as default",
+	}
+)
+
+func InitConfig(ctx *cli.Context) {
+
+	path := ctx.GlobalString(utils.GetFlagName(RosettaConfigFlag))
+	cfile, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}

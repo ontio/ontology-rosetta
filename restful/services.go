@@ -33,10 +33,10 @@ import (
 
 // NewBlockchainRouter creates a Mux http.Handler from a collection
 // of server controllers.
-var(
+var (
 	BLOCKCHAIN = "ont"
-	MAINNET = "mainnet"
-	TESTNET = "testnet"
+	MAINNET    = "mainnet"
+	TESTNET    = "testnet"
 	PRIVATENET = "privatenet"
 )
 
