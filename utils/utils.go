@@ -65,6 +65,7 @@ func InitCurrencies() error {
 		if err != nil {
 			log.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 			continue
+			//return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 		}
 		decimal, err := GetDecimals(scriptHash)
 		if err != nil {
@@ -115,7 +116,8 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 
 				if states[1].(string) != "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM" {
 					//a transfer will divide into 2 operations
-					//from account operation
+					//from and to
+					//from operation
 					fromOpt := new(rtypes.Operation)
 					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
@@ -132,8 +134,9 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 
 					acct := new(rtypes.AccountIdentifier)
 					acct.Address = states[1].(string)
+					fromOpt.Account = acct
 
-					//to account operation
+					//to operation
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx*2 + 1),
@@ -158,8 +161,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					opts = append(opts, fromOpt, toOpt)
 					idx += 1
 				} else {
-					//OEP 4 token case
-					//to account operation
+					//to operation
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
@@ -182,6 +184,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 				}
 			}
 		} else {
+			//todo deal oep4 token
 			method, err := hex.DecodeString(states[0].(string))
 			if err != nil {
 				return nil, err
@@ -194,12 +197,10 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					return nil, err
 				}
 				amt := common.BigIntFromNeoBytes(amtbytes)
-				//for oep4 token code hash
 				subacc := &rtypes.SubAccountIdentifier{Address: contractAddress}
 
-				//all mint token transfer should ignore from account
+				//all mint token transfer should ignore
 				if len(states[1].(string)) > 0 && states[1].(string) != "00" {
-					//from account operation
 					fromOpt := new(rtypes.Operation)
 					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
@@ -212,15 +213,16 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					amount.Value = fmt.Sprintf("-%d", amt.Int64())
 					amount.Currency = GetCurrency(contractAddress)
 					fromOpt.Amount = amount
-					fromacctAddr ,err := neoStrToBase58Addr(states[2].(string))
+					addrFromTmp, _ := common.HexToBytes(states[1].(string))
+					fromAcctAddr, err := common.AddressParseFromBytes(addrFromTmp)
 					if err != nil {
 						return nil, err
 					}
 					fromOpt.Account = &rtypes.AccountIdentifier{
-						Address:    fromacctAddr,
+						Address:    fromAcctAddr.ToBase58(),
 						SubAccount: subacc,
 					}
-					//to account operation
+					//toOpt
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx*2 + 1),
@@ -238,18 +240,19 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toAmount.Currency = GetCurrency(contractAddress)
 					toOpt.Amount = toAmount
 
-					toacctAddr ,err := neoStrToBase58Addr(states[2].(string))
+					addrToTmp, _ := common.HexToBytes(states[2].(string))
+					toAcctAddr, err := common.AddressParseFromBytes(addrToTmp)
 					if err != nil {
 						return nil, err
 					}
 					toOpt.Account = &rtypes.AccountIdentifier{
-						Address:    toacctAddr,
+						Address:    toAcctAddr.ToBase58(),
 						SubAccount: subacc,
 					}
 					opts = append(opts, fromOpt, toOpt)
 					idx += 1
 				} else {
-					//to account operation
+					//toOpt
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
@@ -263,12 +266,13 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toAmount.Currency = GetCurrency(contractAddress)
 					toOpt.Amount = toAmount
 
-					toacctAddr ,err := neoStrToBase58Addr(states[2].(string))
+					addrToTmp, _ := common.HexToBytes(states[2].(string))
+					toAcctAddr, err := common.AddressParseFromBytes(addrToTmp)
 					if err != nil {
 						return nil, err
 					}
 					toOpt.Account = &rtypes.AccountIdentifier{
-						Address:    toacctAddr,
+						Address:    toAcctAddr.ToBase58(),
 						SubAccount: subacc,
 					}
 					opts = append(opts, toOpt)
@@ -282,19 +286,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 	rt.Operations = opts
 	return rt, nil
 }
-
-func neoStrToBase58Addr(str string)(string,error){
-	tmpbytes,err := common.HexToBytes(str)
-	if err != nil{
-		return "",err
-	}
-	acct ,err := common.AddressParseFromBytes(tmpbytes)
-	if err != nil{
-		return "",err
-	}
-	return acct.ToBase58(),nil
-}
-
 
 func IsONT(contractAddr string) bool {
 	return contractAddr == ONT_ADDRESS
