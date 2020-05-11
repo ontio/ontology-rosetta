@@ -327,6 +327,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					coinAmount := strconv.FormatFloat(amount, 'f', 0, 64)
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
+						log.Errorf("ont parse value height:%d err:%s", height, err)
 						continue
 					}
 					transfer.amount = value
@@ -338,24 +339,48 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					}
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
+						log.Errorf("ong parse value height:%d err:%s", height, err)
 						continue
 					}
 					transfer.amount = value
 				}
 			} else {
-				method, _ := common.HexToBytes(slice.Index(0).Interface().(string))
+				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
+				if err != nil {
+					log.Errorf("method HexToBytes err:%s", err)
+					continue
+				}
 				if string(method) != "transfer" {
 					continue
 				}
-				addFromTmp, _ := common.HexToBytes(slice.Index(1).Interface().(string))
-				addFrom, _ := common.AddressParseFromBytes(addFromTmp)
+				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
+				if err != nil {
+					log.Errorf("addFromTmp HexToBytes err:%s", err)
+					continue
+				}
+				addFrom, err := common.AddressParseFromBytes(addFromTmp)
+				if err != nil {
+					log.Errorf("addFrom addrFrom parse addr failed:%s", err)
+					continue
+				}
 				transfer.fromAddr = addFrom.ToBase58()
 
-				addrToTmp, _ := common.HexToBytes(slice.Index(2).Interface().(string))
-				addrTo, _ := common.AddressParseFromBytes(addrToTmp)
+				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
+				if err != nil {
+					log.Errorf("addrToTmp HexToBytes err:%s", err)
+					continue
+				}
+				addrTo, err := common.AddressParseFromBytes(addrToTmp)
+				if err != nil {
+					log.Errorf("addrTo parse addr failed:%s", err)
+					continue
+				}
 				transfer.toAddr = addrTo.ToBase58()
-
-				tmp, _ := common.HexToBytes(slice.Index(3).Interface().(string))
+				tmp, err := common.HexToBytes(slice.Index(3).Interface().(string))
+				if err != nil {
+					log.Errorf("tmp HexToBytes err:%s", err)
+					continue
+				}
 				amt := common.BigIntFromNeoBytes(tmp)
 				amount := amt.Uint64()
 				transfer.amount = amount
