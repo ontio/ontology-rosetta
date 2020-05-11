@@ -56,7 +56,7 @@ func (n NetworkAPIService) NetworkOptions(
 	//todo load from config
 	v := &types.Version{
 		RosettaVersion:    config.Conf.Rosetta.Version,
-		NodeVersion:       config.Conf.OntologVersion,
+		NodeVersion:       config.ONTOLOGY_VERSION,
 		MiddlewareVersion: nil,
 		Metadata:          nil,
 	}

@@ -1,9 +1,23 @@
 {
   "rosetta":{
     "version": "1.3.1",
-    "port": "8080"
+    "port": 8080
   },
 
-  "ontologyVersion": "1.9.0",
-  "monitorOEP4ScriptHash": []
+  "monitorOEP4ScriptHash": ["c27b58e3743062689fdcf1eae3ef5dc55b5ae68a",
+  "e5a49d7fd57e7178e189d3965d1ee64368a1036d",
+  "a0fcb515a1d42b4aaf9734aabf40411fa93f6849",
+  "6df81bc4b30189b0987b54f1d02b62f732cfd8a1",
+  "073e70265590c8e9c3617d115b1e4a36b26dd455",
+  "ecc3ba5b1a2afcfcafa1a3f3b3a6e61d3018ac94",
+  "b71fc841b203bcf08e81311131671885db689faf",
+  "bdc9c45c6d706b54cf5772c48d43661fa7db25cd",
+  "6bbc07bae862db0d7867e4e5b1a13c663e2b4bc8",
+  "f916e8ebccbf27049b8444073032c27aa5c5c392",
+  "78b98deed62aa708eaf6de85843734ecdfb14c1b",
+  "24b3a4a8736a2ef70344bbdb4a9de82f0147caab",
+  "b52b63902ed5d6455cd7929a13613fc1b88a056f",
+  "59287ef2517ba65fb70fba8f0118d7fb4ed25fbc",
+  "6c80f3a5c183edee7693a038ca8c476fb0d6ac91"]
+
 }

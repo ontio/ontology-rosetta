@@ -33,6 +33,7 @@ import (
 	"github.com/ontio/ontology-eventbus/actor"
 	alog "github.com/ontio/ontology-eventbus/log"
 	rcfg "github.com/ontio/ontology-rosetta/config"
+	rconfig "github.com/ontio/ontology-rosetta/config"
 	services "github.com/ontio/ontology-rosetta/restful"
 	"github.com/ontio/ontology-rosetta/store"
 	rutil "github.com/ontio/ontology-rosetta/utils"
@@ -87,6 +88,8 @@ func setupAPP() *cli.App {
 	}
 	app.Flags = []cli.Flag{
 		//common setting
+		rconfig.RosettaConfigFlag,
+
 		utils.ConfigFlag,
 		utils.LogLevelFlag,
 		utils.DisableLogFileFlag,
@@ -139,9 +142,6 @@ func setupAPP() *cli.App {
 }
 
 //modify go.mod ontology version need change ONTOLOGY_VERSION
-var (
-	ONTOLOGY_VERSION = "1.9.0"
-)
 
 func main() {
 	if err := setupAPP().Run(os.Args); err != nil {
@@ -152,9 +152,9 @@ func main() {
 
 func startOntology(ctx *cli.Context) {
 	initLog(ctx)
-	rcfg.InitConfig()
+	rcfg.InitConfig(ctx)
 
-	log.Infof("ontology version %s", ONTOLOGY_VERSION)
+	log.Infof("ontology version %s", rconfig.ONTOLOGY_VERSION)
 
 	setMaxOpenFiles()
 
@@ -417,7 +417,8 @@ func initRoseRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Stor
 		log.Error("newStore err:%s", err)
 		return nil, err
 	}
-	services.NewService(8080, p2pSvr, store)
+	port := rconfig.Conf.Rosetta.Port
+	services.NewService(port, p2pSvr, store)
 	log.Infof("Restful init success")
 	return store, nil
 }
