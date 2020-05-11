@@ -20,17 +20,17 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
-	"github.com/ontio/ontology/common/log"
-	"github.com/ontio/ontology/smartcontract/event"
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
+	"github.com/ontio/ontology/smartcontract/event"
+	"strings"
 )
 
 var (
