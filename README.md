@@ -10,7 +10,7 @@ docker build -t ontology-rosetta:0.1 .
 ## Running docker image
 
 ```sh
-docker run --env NETWORK_ID=1 --name rosettatest -d -v /opt/data/Chain:/data/Chain -v /opt/data/rosetta-config.json:/data/rosetta-config.json -p 9090:8080 ontology-rosetta:0.1
+docker run --name rosettatest -d -v /opt/data/Chain:/data/Chain -v /opt/data/rosetta-config.json:/data/rosetta-config.json -p 9090:8080 ontology-rosetta:0.1
 ```
 ## How to use
 
@@ -58,7 +58,7 @@ OEP4 token codehash to monitor, you can find them on <https://explorer.ont.io/to
 
 ## Restful API
 
-Following  rosetta protocol(https://djr6hkgq2tjcs.cloudfront.net/docs/Reference.html) , ontology-rosetta providing following Restful APIs:
+Based on rosetta protocol, ontology-rosetta node provides following Restful APIs:
 
 ### Network
 
@@ -492,10 +492,6 @@ Sample:
 }
 ```
 
-**Note**
-
-A transfer will record as  two operations (please refer to :<https://djr6hkgq2tjcs.cloudfront.net/docs/ApiDesign.html#single-party-linked-operations>)
-
 
 
 **/block/transaction**
@@ -524,6 +520,187 @@ Request:
 Response:
 
 Sample:
+
+```json
+{
+    "transaction": {
+        "transaction_identifier": {
+            "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
+        },
+        "operations": [
+            {
+                "operation_identifier": {
+                    "index": 0
+                },
+                "type": "transfer",
+                "status": "SUCCESS",
+                "account": {
+                    "address": "AJMFNZL5jGjZJEhBrJfVLHJeJ3KwiczJ6B"
+                },
+                "amount": {
+                    "value": "-1000000000",
+                    "currency": {
+                        "symbol": "ONT",
+                        "decimals": 0,
+                        "metadata": {
+                            "ContractAddress": "0100000000000000000000000000000000000000",
+                            "TokenType": "Governance Token"
+                        }
+                    }
+                }
+            },
+            {
+                "operation_identifier": {
+                    "index": 1
+                },
+                "related_operations": [
+                    {
+                        "index": 0
+                    }
+                ],
+                "type": "transfer",
+                "status": "SUCCESS",
+                "account": {
+                    "address": "AWyEMxiLUVr5MeVJe3Fw5Xsij7iZUmfYyk"
+                },
+                "amount": {
+                    "value": "1000000000",
+                    "currency": {
+                        "symbol": "ONT",
+                        "decimals": 0,
+                        "metadata": {
+                            "ContractAddress": "0100000000000000000000000000000000000000",
+                            "TokenType": "Governance Token"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
+```
+
+
+
+### Construction
+
+**/construction/metadata**
+
+*Get Transaction Construction Metadata*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+     "options": {}
+}
+```
+
+Response:
+
+Sample
+
+```json
+{
+    "metadata": {
+        "current_block_hash": "9e83f6310aff1903e3fa21fe9eae6c8a013fa62dbfc155d32af1bcec7b68a513",
+        "current_block_height": 212635
+    }
+}
+```
+
+
+
+**/construction/submit**
+
+*Submit a Signed Transaction*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+     "signed_transaction": "<signed tx hex>"
+}
+```
+
+Response:
+
+Sample
+
+```json
+{
+    "transaction_identifier": {
+        "hash": "<tx hash>"
+    },
+    "metadata": {}
+}
+```
+
+
+
+### Mempool
+
+**/mempool**
+
+*Get All Mempool Transactions*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        }
+}
+```
+
+Response:
+
+Sample
+
+```
+{
+    "transaction_identifiers": [
+        {
+            "hash": "<tx hash>"
+        }
+    ]
+}
+```
+
+
+
+**/mempool/transaction**
+
+*Get a Mempool Transaction*
+
+Request:
+
+```
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+    "transaction_identifier": {
+        "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
+    }
+    
+}
+```
+
+Response:
+
+Sample
 
 ```
 {
