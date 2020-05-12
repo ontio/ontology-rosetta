@@ -82,4 +82,7 @@ func InitConfig(ctx *cli.Context) {
 	if err != nil {
 		panic(err)
 	}
+	if Conf.Rosetta == nil  || Conf.Rosetta.Port > 65535  || Conf.Rosetta.Port <=0 {
+		panic("Conf is invalid")
+	}
 }

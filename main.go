@@ -418,7 +418,7 @@ func initRoseRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Stor
 		return nil, err
 	}
 	port := rconfig.Conf.Rosetta.Port
-	services.NewService(port, p2pSvr, store)
+	go services.NewService(port, p2pSvr, store)
 	log.Infof("Restful init success")
 	return store, nil
 }
