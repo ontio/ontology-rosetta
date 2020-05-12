@@ -284,7 +284,7 @@ func GetBlockHeight(store *db.Store) {
 			transfers := parseEventNotify(notify, i)
 			err = dealTransferData(store, transfers, i)
 			if err != nil {
-				log.Errorf("err:%s",err)
+				log.Errorf("err:%s", err)
 				panic(err)
 			}
 		}
@@ -490,7 +490,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	for _, balance := range balances {
 		buf, err := json.Marshal(balance.Value)
 		if err != nil {
-			log.Errorf("unmarshal err:%s",err)
+			log.Errorf("unmarshal err:%s", err)
 			panic(err)
 		}
 		store.BatchPut([]byte(balance.Key), buf)

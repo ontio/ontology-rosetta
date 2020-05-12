@@ -41,8 +41,9 @@ var (
 	AUTH_ADDRESS  = "0600000000000000000000000000000000000000"
 	GOV_ADDRESS   = "0700000000000000000000000000000000000000"
 
-	STATE_SUCCESS = "SUCCESS"
-	STATE_FAILED  = "FAILED"
+	ONT_ADDR_BASE58 = "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"
+	STATE_SUCCESS   = "SUCCESS"
+	STATE_FAILED    = "FAILED"
 
 	Currencies map[string]*rtypes.Currency
 )
@@ -115,7 +116,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 				//2. transfer 10^9 ONG(decimals 9) from  AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM to AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV(Gov contract)
 				//this will not raise as a operation
 
-				if states[1].(string) != "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM" {
+				if states[1].(string) != ONT_ADDR_BASE58 {
 					//a transfer will divide into 2 operations
 					//from and to
 					//from operation
