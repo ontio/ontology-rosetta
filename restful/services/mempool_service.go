@@ -45,10 +45,6 @@ func NewMemPoolService(network *types.NetworkIdentifier) server.MempoolAPIServic
 
 func (this *MemPoolService) Mempool(ctx context.Context, req *types.MempoolRequest) (*types.MempoolResponse,
 	*types.Error) {
-	if req.NetworkIdentifier.Blockchain != this.network.Blockchain ||
-		req.NetworkIdentifier.Network != this.network.Network {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
 	txMap := bactor.GetTxsFromPool(false)
 	resp := &types.MempoolResponse{
 		TransactionIdentifiers: make([]*types.TransactionIdentifier, 0),
@@ -63,10 +59,6 @@ func (this *MemPoolService) Mempool(ctx context.Context, req *types.MempoolReque
 
 func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.MempoolTransactionRequest,
 ) (*types.MempoolTransactionResponse, *types.Error) {
-	if req.NetworkIdentifier.Blockchain != this.network.Blockchain ||
-		req.NetworkIdentifier.Network != this.network.Network {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
 	hash, err := common.Uint256FromHexString(req.TransactionIdentifier.Hash)
 	if err != nil {
 		log.Errorf("MempoolTransaction: parse req hash %s, %s", req.TransactionIdentifier.Hash, err)
