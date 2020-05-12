@@ -274,6 +274,7 @@ func GetBlockHeight(store *db.Store) {
 					continue
 				} else {
 					log.Errorf("GetEventNotifyByHeight height:%d,err:%s", i, err.Error())
+					panic(err)
 				}
 			}
 			if notify == nil {
@@ -283,7 +284,8 @@ func GetBlockHeight(store *db.Store) {
 			transfers := parseEventNotify(notify, i)
 			err = dealTransferData(store, transfers, i)
 			if err != nil {
-				continue
+				log.Errorf("err:%s",err)
+				panic(err)
 			}
 		}
 		h = height
@@ -325,7 +327,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
 						log.Errorf("ont parse value height:%d err:%s", height, err)
-						continue
+						panic(err)
 					}
 					transfer.amount = value
 				} else if value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
@@ -337,7 +339,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
 						log.Errorf("ong parse value height:%d err:%s", height, err)
-						continue
+						panic(err)
 					}
 					transfer.amount = value
 				}
@@ -345,7 +347,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
 					log.Errorf("method HexToBytes err:%s", err)
-					continue
+					panic(err)
 				}
 				if string(method) != "transfer" {
 					continue
@@ -353,30 +355,30 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
 				if err != nil {
 					log.Errorf("addFromTmp HexToBytes err:%s", err)
-					continue
+					panic(err)
 				}
 				addFrom, err := common.AddressParseFromBytes(addFromTmp)
 				if err != nil {
 					log.Errorf("addFrom addrFrom parse addr failed:%s", err)
-					continue
+					panic(err)
 				}
 				transfer.fromAddr = addFrom.ToBase58()
 
 				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
 				if err != nil {
 					log.Errorf("addrToTmp HexToBytes err:%s", err)
-					continue
+					panic(err)
 				}
 				addrTo, err := common.AddressParseFromBytes(addrToTmp)
 				if err != nil {
 					log.Errorf("addrTo parse addr failed:%s", err)
-					continue
+					panic(err)
 				}
 				transfer.toAddr = addrTo.ToBase58()
 				tmp, err := common.HexToBytes(slice.Index(3).Interface().(string))
 				if err != nil {
 					log.Errorf("tmp HexToBytes err:%s", err)
-					continue
+					panic(err)
 				}
 				amt := common.BigIntFromNeoBytes(tmp)
 				amount := amt.Uint64()
@@ -458,7 +460,7 @@ func dealTransferData(store *db.Store, tranfers []*transferInfo, height uint32) 
 			var params []*Balance
 			err = json.Unmarshal(value, &params)
 			if err != nil {
-				return err
+				panic(err)
 			}
 			sort.SliceStable(params, func(i, j int) bool {
 				if params[i].Height > params[j].Height {
@@ -488,14 +490,15 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	for _, balance := range balances {
 		buf, err := json.Marshal(balance.Value)
 		if err != nil {
-			return err
+			log.Errorf("unmarshal err:%s",err)
+			panic(err)
 		}
 		store.BatchPut([]byte(balance.Key), buf)
 	}
 	store.BatchPut(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	err := store.CommitTo()
 	if err != nil {
-		log.Error("batchSaveBalance err:%s", err)
+		log.Errorf("batchSaveBalance err:%s", err)
 		panic(err)
 	}
 	return nil
