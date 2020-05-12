@@ -20,17 +20,17 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
-	"github.com/ontio/ontology/common/log"
-	"github.com/ontio/ontology/smartcontract/event"
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
+	"github.com/ontio/ontology/smartcontract/event"
+	"strings"
 )
 
 var (
@@ -101,11 +101,12 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 	for _, notify := range events.Notify {
 		contractAddress := notify.ContractAddress.ToHexString()
 
+		//skip when not a monitored contract
 		if !isMonitoredAddress(contractAddress) {
 			continue
 		}
 		states := notify.States.([]interface{})
-
+		//ONT and ONG
 		if IsONT(contractAddress) || IsONG(contractAddress) {
 			if len(states) == 4 { //['transfer',from,to,amount]
 
@@ -184,7 +185,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 				}
 			}
 		} else {
-			//todo deal oep4 token
+			// deal oep4 token
 			method, err := hex.DecodeString(states[0].(string))
 			if err != nil {
 				return nil, err
@@ -394,13 +395,6 @@ func GetCurrency(contractAddress string) *rtypes.Currency {
 		return currency
 	}
 	return c
-}
-
-func VerifyNetworkIdentifier(this *rtypes.NetworkIdentifier, that *rtypes.NetworkIdentifier) bool {
-	return this.Blockchain == that.Blockchain &&
-		this.Network == that.Network &&
-		this.SubNetworkIdentifier == nil &&
-		that.SubNetworkIdentifier == nil
 }
 
 func PreExecNeovmContract(contractAddress string, method string, params []interface{}) (interface{}, error) {

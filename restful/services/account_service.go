@@ -62,9 +62,6 @@ func (s *AccountAPIService) AccountBalance(
 		Balances:        make([]*types.Amount, 0),
 		Metadata:        make(map[string]interface{}),
 	}
-	if !util.VerifyNetworkIdentifier(s.network, request.NetworkIdentifier) {
-		return resp, NETWORK_IDENTIFIER_ERROR
-	}
 	if request.AccountIdentifier == nil {
 		return resp, PARAMS_ERROR
 	}

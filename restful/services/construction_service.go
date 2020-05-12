@@ -22,7 +22,6 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
-	"github.com/ontio/ontology-rosetta/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	ctypes "github.com/ontio/ontology/core/types"
@@ -44,9 +43,6 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	ctx context.Context,
 	request *types.ConstructionMetadataRequest,
 ) (*types.ConstructionMetadataResponse, *types.Error) {
-	if !utils.VerifyNetworkIdentifier(c.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
 	//todo define the options
 	//ni := request.NetworkIdentifier
 	//opt := request.Options
@@ -70,9 +66,6 @@ func (c ConstructionAPIService) ConstructionSubmit(
 	ctx context.Context,
 	request *types.ConstructionSubmitRequest,
 ) (*types.ConstructionSubmitResponse, *types.Error) {
-	if !utils.VerifyNetworkIdentifier(c.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
 	//ni := request.NetworkIdentifier
 	txStr := request.SignedTransaction
 	if len(txStr) == 0 {

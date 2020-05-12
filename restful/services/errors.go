@@ -22,7 +22,7 @@ import "github.com/coinbase/rosetta-sdk-go/types"
 var (
 	NETWORK_IDENTIFIER_ERROR = &types.Error{
 		Code:      400,
-		Message:   "Network identifier is not supported",
+		Message:   "network identifier is not supported",
 		Retriable: false,
 	}
 

@@ -46,11 +46,6 @@ func (s *BlockAPIService) Block(
 	ctx context.Context,
 	request *types.BlockRequest,
 ) (*types.BlockResponse, *types.Error) {
-
-	if !utils.VerifyNetworkIdentifier(s.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
-
 	if request.BlockIdentifier.Index == nil && request.BlockIdentifier.Hash == nil {
 		return nil, BLOCK_IDENTIFIER_NIL
 	}
@@ -157,9 +152,6 @@ func (s *BlockAPIService) BlockTransaction(
 	ctx context.Context,
 	request *types.BlockTransactionRequest,
 ) (*types.BlockTransactionResponse, *types.Error) {
-	if !utils.VerifyNetworkIdentifier(s.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
 	blocknum := request.BlockIdentifier.Index
 	blockhash := request.BlockIdentifier.Hash
 

@@ -24,7 +24,6 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/config"
-	"github.com/ontio/ontology-rosetta/utils"
 	"github.com/ontio/ontology/http/base/actor"
 	"github.com/ontio/ontology/p2pserver"
 )
@@ -49,11 +48,6 @@ func (n NetworkAPIService) NetworkOptions(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkOptionsResponse, *types.Error) {
-	if !utils.VerifyNetworkIdentifier(n.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
-
-	//todo load from config
 	v := &types.Version{
 		RosettaVersion:    config.Conf.Rosetta.Version,
 		NodeVersion:       config.ONTOLOGY_VERSION,
@@ -109,11 +103,6 @@ func (n NetworkAPIService) NetworkStatus(
 	ctx context.Context,
 	request *types.NetworkRequest,
 ) (*types.NetworkStatusResponse, *types.Error) {
-
-	if !utils.VerifyNetworkIdentifier(n.network, request.NetworkIdentifier) {
-		return nil, NETWORK_IDENTIFIER_ERROR
-	}
-
 	currentheight := actor.GetCurrentBlockHeight()
 	currentblock, err := actor.GetBlockByHeight(currentheight)
 	if err != nil {
