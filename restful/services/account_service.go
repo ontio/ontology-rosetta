@@ -30,6 +30,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/ontio/ontology-rosetta/config"
 	db "github.com/ontio/ontology-rosetta/store"
 	util "github.com/ontio/ontology-rosetta/utils"
 	"github.com/ontio/ontology/common"
@@ -40,7 +41,6 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/ontio/ontology-rosetta/config"
 )
 
 type AccountAPIService struct {

@@ -67,6 +67,9 @@ func (s *BlockAPIService) Block(
 			return nil, GET_BLOCK_FAILED
 		}
 		block, err = actor.GetBlockFromStore(hash)
+		if err != nil {
+			return nil, GET_BLOCK_FAILED
+		}
 	}
 
 	if block == nil {

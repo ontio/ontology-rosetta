@@ -309,7 +309,7 @@ func isNative(contractAddr string) bool {
 func IsOEP4(contractAddr string) bool {
 
 	for _, oep4 := range config.Conf.MonitorOEP4ScriptHash {
-		if strings.ToLower(contractAddr) == strings.ToLower(oep4) {
+		if strings.EqualFold(contractAddr, oep4) {
 			return true
 		}
 	}
