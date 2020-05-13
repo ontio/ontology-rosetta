@@ -20,6 +20,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/ontio/ontology/common/log"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
@@ -116,6 +117,7 @@ func (n NetworkAPIService) NetworkStatus(
 	currentBlockTimestamp := int64(currentblock.Header.Timestamp) * 1000
 	genesisBlock, err := actor.GetBlockByHeight(0)
 	if err != nil {
+		log.Errorf("[NetworkStatus]GetBlockByHeight failed: %s",err.Error())
 		return nil, GET_BLOCK_FAILED
 	}
 	gbHash := genesisBlock.Hash()

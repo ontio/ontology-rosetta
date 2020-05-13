@@ -20,6 +20,7 @@ package services
 
 import (
 	"context"
+	"github.com/ontio/ontology/common/log"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
@@ -59,15 +60,18 @@ func (s *BlockAPIService) Block(
 	if request.BlockIdentifier.Index != nil {
 		block, err = actor.GetBlockByHeight(uint32(*request.BlockIdentifier.Index))
 		if err != nil {
+			log.Errorf("[Block]GetBlockByHeight failed: %s",err.Error())
 			return nil, GET_BLOCK_FAILED
 		}
 	} else {
 		hash, err := common.Uint256FromHexString(*request.BlockIdentifier.Hash)
 		if err != nil {
+			log.Errorf("[Block]Uint256FromHexString failed: %s",err.Error())
 			return nil, GET_BLOCK_FAILED
 		}
 		block, err = actor.GetBlockFromStore(hash)
 		if err != nil {
+			log.Errorf("[Block]GetBlockFromStore failed: %s",err.Error())
 			return nil, GET_BLOCK_FAILED
 		}
 	}
@@ -110,6 +114,7 @@ func (s *BlockAPIService) Block(
 
 		privblock, err := actor.GetBlockByHeight(blocknum - 1)
 		if err != nil {
+			log.Errorf("[Block]GetBlockByHeight failed: %s",err.Error())
 			return nil, GET_BLOCK_FAILED
 		}
 		if privblock != nil {
@@ -124,6 +129,7 @@ func (s *BlockAPIService) Block(
 	for _, tx := range block.Transactions {
 		rtx, err := utils.TransformTransaction(tx)
 		if err != nil {
+			log.Errorf("[Block]TransformTransaction failed: %s",err.Error())
 			return nil, GET_TRANSACTION_FAILED
 		}
 		if len(rtx.Operations) > 0 {
@@ -160,11 +166,13 @@ func (s *BlockAPIService) BlockTransaction(
 
 	txhash, err := common.Uint256FromHexString(request.TransactionIdentifier.Hash)
 	if err != nil {
+		log.Errorf("[BlockTransaction]Uint256FromHexString failed: %s",err.Error())
 		return nil, TXHASH_INVALID
 	}
 
 	blockheight, tx, err := actor.GetTxnWithHeightByTxHash(txhash)
 	if err != nil {
+		log.Errorf("[BlockTransaction]GetTxnWithHeightByTxHash failed: %s",err.Error())
 		return nil, GET_TRANSACTION_FAILED
 	}
 	if blocknum != int64(blockheight) {
@@ -178,6 +186,7 @@ func (s *BlockAPIService) BlockTransaction(
 
 	rtx, err := utils.TransformTransaction(tx)
 	if err != nil {
+		log.Errorf("[BlockTransaction]TransformTransaction failed: %s",err.Error())
 		return nil, GET_TRANSACTION_FAILED
 	}
 

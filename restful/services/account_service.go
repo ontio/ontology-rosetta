@@ -315,7 +315,7 @@ func GetBlockHeight(store *db.Store) error {
 			}
 			h = height
 			height = bactor.GetCurrentBlockHeight()
-			<-time.After(time.Second * 20)
+			<-time.After(time.Second * 1)
 		}
 	}()
 	return nil
