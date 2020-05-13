@@ -42,8 +42,10 @@ func TestGetHeightFromStore(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	h := getHeightFromStore(db)
-
+	h,err := getHeightFromStore(db)
+	if err != nil {
+		t.Error(err)
+	}
 	assert.Equal(t, height, h)
 	amount, err := getHistoryBalance(db, 6, "AN8JWdUKz5rhpemD61NkAWmS6eb5WXtmq5", util.ONT_ADDRESS)
 	if err != nil {

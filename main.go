@@ -63,6 +63,7 @@ import (
 	"github.com/ontio/ontology/txnpool/proc"
 	"github.com/ontio/ontology/validator/stateful"
 	"github.com/ontio/ontology/validator/stateless"
+	service "github.com/ontio/ontology-rosetta/restful/services"
 	"github.com/urfave/cli"
 )
 
@@ -211,7 +212,7 @@ func startOntology(ctx *cli.Context) {
 
 	initWs(ctx)
 	initNodeInfo(ctx, p2pSvr)
-	store, err := initRoseRestful(ctx, p2pSvr)
+	store, err := initRosettaRestful(ctx, p2pSvr)
 	if err != nil {
 		return
 	}
@@ -413,16 +414,34 @@ func initLocalRpc(ctx *cli.Context) error {
 
 //start rosetta-node restful
 
-func initRoseRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Store, error) {
+func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Store, error) {
 	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName+"/accstore")
 	store, err := store.NewStore(dbDir)
 	if err != nil {
 		log.Error("newStore err:%s", err)
 		return nil, err
 	}
-	port := rconfig.Conf.Rosetta.Port
-	go services.NewService(port, p2pSvr, store)
-	log.Infof("Restful init success")
+	var errmsg error
+	exitCh := make(chan interface{}, 0)
+	go func() {
+		errmsg = services.NewService(rconfig.Conf.Rosetta.Port, p2pSvr, store)
+		close(exitCh)
+	}()
+
+	flag := false
+	select {
+	case <-exitCh:
+		if !flag {
+			log.Errorf("Rosetta Restful init failed:%s",errmsg)
+			return store,errmsg
+		}
+	case <-time.After(time.Millisecond * 5):
+		flag = true
+	}
+	if err := service.GetBlockHeight(store); err != nil {
+		return store,err
+	}
+	log.Infof("Rosetta Restful init success port:%d",rconfig.Conf.Rosetta.Port)
 	return store, nil
 }
 
@@ -488,8 +507,8 @@ func waitToExit(db *ledger.Ledger, store *store.Store) {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		for sig := range sc {
-			log.Infof("Ontology received exit signal: %v.", sig.String())
-			log.Infof("closing ledger...")
+			log.Infof("Rosetta received exit signal: %v.", sig.String())
+			log.Infof("closing ledger,accstore...")
 			db.Close()
 			store.Close()
 			close(exit)

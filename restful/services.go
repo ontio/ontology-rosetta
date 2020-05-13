@@ -71,7 +71,7 @@ func NewBlockchainRouter(
 		mempoolAPIController)
 }
 
-func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store) {
+func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store) error {
 	networkName := "unnkown"
 	if config.DefConfig.P2PNode.NetworkName == config.NETWORK_NAME_MAIN_NET {
 		networkName = MAINNET
@@ -89,9 +89,8 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 	asserter, err := asserter.NewServer([]*types.NetworkIdentifier{network})
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	router := NewBlockchainRouter(network, asserter, p2pSvr, store)
-	log.Infof("Listening on port: %d", restfulPort)
-	go services.GetBlockHeight(store)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", restfulPort), router))
+	return http.ListenAndServe(fmt.Sprintf(":%d", restfulPort), router)
 }
