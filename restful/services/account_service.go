@@ -22,6 +22,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/ontio/ontology/errors"
+	"io"
 	"reflect"
 	"sort"
 	"strconv"
@@ -308,7 +310,7 @@ func GetBlockHeight(store *db.Store) error {
 				}
 				err = dealTransferData(store, transfers, i)
 				if err != nil {
-					log.Errorf("dealTransferData %s", err)
+					log.Errorf("dealTransferData height:%d,erp:%s", i, err)
 					notifyKillProcess()
 					return
 				}
@@ -325,7 +327,7 @@ func notifyKillProcess() {
 	log.Info("notify kill rosetta process")
 	err := syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	if err != nil {
-		log.Fatalf("notifyKillProcess ,err:%s",err)
+		log.Fatalf("notifyKillProcess ,err:%s", err)
 		panic(err)
 	}
 }
@@ -387,7 +389,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 			} else {
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
-					log.Errorf("method HexToBytes err:%s", err)
+					log.Errorf("method HexToBytes height:%d err:%s", height, err)
 					return nil, err
 				}
 				if !strings.EqualFold(string(method), config.OP_TYPE_TRANSFER) {
@@ -395,30 +397,30 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				}
 				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
 				if err != nil {
-					log.Errorf("addFromTmp HexToBytes err:%s", err)
+					log.Errorf("addFromTmp HexToBytes height:%d, err:%s", height, err)
 					return nil, err
 				}
 				addFrom, err := common.AddressParseFromBytes(addFromTmp)
 				if err != nil {
-					log.Errorf("addFrom addrFrom parse addr failed:%s", err)
+					log.Errorf("addFrom addrFrom parse addr height:%d,failed:%s", height, err)
 					return nil, err
 				}
 				transfer.fromAddr = addFrom.ToBase58()
 
 				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
 				if err != nil {
-					log.Errorf("addrToTmp HexToBytes err:%s", err)
+					log.Errorf("addrToTmp HexToBytes height:%d,err:%s", height, err)
 					return nil, err
 				}
 				addrTo, err := common.AddressParseFromBytes(addrToTmp)
 				if err != nil {
-					log.Errorf("addrTo parse addr failed:%s", err)
+					log.Errorf("addrTo parse addr height:%d, failed:%s", height, err)
 					return nil, err
 				}
 				transfer.toAddr = addrTo.ToBase58()
 				tmp, err := common.HexToBytes(slice.Index(3).Interface().(string))
 				if err != nil {
-					log.Errorf("tmp HexToBytes err:%s", err)
+					log.Errorf("tmp HexToBytes height:%d,err:%s", height, err)
 					return nil, err
 				}
 				amt := common.BigIntFromNeoBytes(tmp)
@@ -441,6 +443,69 @@ type Balance struct {
 	Height uint32 `json:"height"`
 	Amount uint64 `json:"amount"`
 }
+
+func (self *Balance) Serialization(sink *common.ZeroCopySink) {
+	sink.WriteUint32(self.Height)
+	sink.WriteUint64(self.Amount)
+}
+
+func (self *Balance) Deserialization(source *common.ZeroCopySource) error {
+	h,eof := source.NextUint32()
+	if eof {
+		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint32, deserialize height error!")
+	}
+	a,eof := source.NextUint64()
+	if eof {
+		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint64, deserialize amount error!")
+	}
+	self.Height = h
+	self.Amount = a
+	return nil
+}
+
+type Balances struct {
+	Value []*Balance `json:"value"`
+}
+
+func (self *Balances) Serialization() []byte{
+	sink := common.NewZeroCopySink(nil)
+	sink.WriteVarUint(uint64(len(self.Value)))
+	for _,balance := range self.Value {
+		s := common.NewZeroCopySink(nil)
+		balance.Serialization(s)
+		sink.WriteVarBytes(s.Bytes())
+	}
+	return sink.Bytes()
+}
+
+func (self *Balances) Deserialization(values []byte) error  {
+	source := common.NewZeroCopySource(values)
+	n, _, irregular, eof := source.NextVarUint()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	if irregular {
+		return common.ErrIrregularData
+	}
+	for i := 0; i < int(n); i++ {
+		buf, _, irregular, eof := source.NextVarBytes()
+		if eof {
+			return io.ErrUnexpectedEOF
+		}
+		if irregular {
+			return common.ErrIrregularData
+		}
+		s := common.NewZeroCopySource(buf)
+		balance := &Balance{}
+		err := balance.Deserialization(s)
+		if err != nil {
+			return err
+		}
+		self.Value = append(self.Value,balance)
+	}
+	return nil
+}
+
 type BalanceInfo struct {
 	Key   string     `json:"key"`
 	Value []*Balance `json:"value"`
@@ -483,7 +548,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 		value, err := store.GetData([]byte(k))
 		if err != nil {
 			if err != leveldb.ErrNotFound {
-				log.Errorf("getData k:%s,err:%s", k, err)
+				log.Errorf("getData height:%d,k:%s,err:%s", height, k, err)
 				return err
 			} else {
 				balances := make([]*Balance, 0)
@@ -501,7 +566,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 			var params []*Balance
 			err = json.Unmarshal(value, &params)
 			if err != nil {
-				log.Errorf("unmarshal err:%s", err)
+				log.Errorf("unmarshal err:%s,height:%d", err, height)
 				return err
 			}
 			sort.SliceStable(params, func(i, j int) bool {
@@ -511,7 +576,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				return true
 			})
 			if params[len(params)-1].Amount+v.addAmount < v.subAmount {
-				log.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d",k,params[len(params)-1].Amount,v.addAmount,v.subAmount)
+				log.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, params[len(params)-1].Amount, v.addAmount, v.subAmount, height)
 				return fmt.Errorf("amount error")
 			}
 			balance := &Balance{
@@ -533,7 +598,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	for _, balance := range balances {
 		buf, err := json.Marshal(balance.Value)
 		if err != nil {
-			log.Errorf("unmarshal err:%s", err)
+			log.Errorf("unmarshal err:%s,height:%d", err, height)
 			return err
 		}
 		store.BatchPut([]byte(balance.Key), buf)
@@ -541,7 +606,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	store.BatchPut(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	err := store.CommitTo()
 	if err != nil {
-		log.Errorf("batchSaveBalance err:%s", err)
+		log.Errorf("batchSaveBalance err:%s,height:%d", err, height)
 		return err
 	}
 	return nil
@@ -565,7 +630,7 @@ func getHeightFromStore(store *db.Store) (uint32, error) {
 func saveBlockHeight(store *db.Store, height uint32) error {
 	err := store.SaveData(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	if err != nil {
-		log.Error(err)
+		log.Error("SaveData err:%s,height:%d", err, height)
 		return err
 	}
 	return nil

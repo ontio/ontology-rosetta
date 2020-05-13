@@ -21,6 +21,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	service "github.com/ontio/ontology-rosetta/restful/services"
 	"os"
 	"os/signal"
 	"runtime"
@@ -63,7 +64,6 @@ import (
 	"github.com/ontio/ontology/txnpool/proc"
 	"github.com/ontio/ontology/validator/stateful"
 	"github.com/ontio/ontology/validator/stateless"
-	service "github.com/ontio/ontology-rosetta/restful/services"
 	"github.com/urfave/cli"
 )
 
