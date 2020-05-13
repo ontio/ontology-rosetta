@@ -35,6 +35,7 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
+	com "github.com/ontio/ontology/core/store/common"
 	bactor "github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
 	"github.com/ontio/ontology/smartcontract/event"
@@ -269,7 +270,7 @@ func GetBlockHeight(store *db.Store) {
 		for i := num; i <= height; i++ {
 			notify, err := bactor.GetEventNotifyByHeight(i)
 			if err != nil {
-				if err.Error() == "not found" {
+				if err == com.ErrNotFound {
 					saveBlockHeight(store, i)
 					continue
 				} else {
@@ -281,7 +282,10 @@ func GetBlockHeight(store *db.Store) {
 				saveBlockHeight(store, i)
 				continue
 			}
-			transfers := parseEventNotify(notify, i)
+			transfers, err := parseEventNotify(notify, i)
+			if err != nil {
+				panic(err)
+			}
 			err = dealTransferData(store, transfers, i)
 			if err != nil {
 				log.Errorf("err:%s", err)
@@ -294,7 +298,7 @@ func GetBlockHeight(store *db.Store) {
 	}
 }
 
-func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*transferInfo {
+func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*transferInfo, error) {
 	transfers := make([]*transferInfo, 0)
 	for _, execute := range execNotify {
 		if execute.State == event.CONTRACT_STATE_FAIL {
@@ -316,7 +320,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 			transfer.contractAddr = value.ContractAddress.ToHexString()
 			if value.ContractAddress.ToHexString() == util.ONT_ADDRESS || value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
 				method := slice.Index(0).Interface().(string)
-				if method != "transfer" {
+				if method != util.TRANSFER_METHOD {
 					continue
 				}
 				transfer.fromAddr = slice.Index(1).Interface().(string)
@@ -327,7 +331,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
 						log.Errorf("ont parse value height:%d err:%s", height, err)
-						panic(err)
+						return nil, err
 					}
 					transfer.amount = value
 				} else if value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
@@ -339,7 +343,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 					value, err := strconv.ParseUint(coinAmount, 10, 64)
 					if err != nil {
 						log.Errorf("ong parse value height:%d err:%s", height, err)
-						panic(err)
+						return nil, err
 					}
 					transfer.amount = value
 				}
@@ -347,38 +351,38 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
 					log.Errorf("method HexToBytes err:%s", err)
-					panic(err)
+					return nil, err
 				}
-				if string(method) != "transfer" {
+				if string(method) != util.TRANSFER_METHOD {
 					continue
 				}
 				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
 				if err != nil {
 					log.Errorf("addFromTmp HexToBytes err:%s", err)
-					panic(err)
+					return nil, err
 				}
 				addFrom, err := common.AddressParseFromBytes(addFromTmp)
 				if err != nil {
 					log.Errorf("addFrom addrFrom parse addr failed:%s", err)
-					panic(err)
+					return nil, err
 				}
 				transfer.fromAddr = addFrom.ToBase58()
 
 				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
 				if err != nil {
 					log.Errorf("addrToTmp HexToBytes err:%s", err)
-					panic(err)
+					return nil, err
 				}
 				addrTo, err := common.AddressParseFromBytes(addrToTmp)
 				if err != nil {
 					log.Errorf("addrTo parse addr failed:%s", err)
-					panic(err)
+					return nil, err
 				}
 				transfer.toAddr = addrTo.ToBase58()
 				tmp, err := common.HexToBytes(slice.Index(3).Interface().(string))
 				if err != nil {
 					log.Errorf("tmp HexToBytes err:%s", err)
-					panic(err)
+					return nil, err
 				}
 				amt := common.BigIntFromNeoBytes(tmp)
 				amount := amt.Uint64()
@@ -387,7 +391,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) []*trans
 			transfers = append(transfers, transfer)
 		}
 	}
-	return transfers
+	return transfers, nil
 }
 
 type ValueInfo struct {
@@ -413,9 +417,9 @@ func getBlockHeightKey() []byte {
 	return []byte("height")
 }
 
-func dealTransferData(store *db.Store, tranfers []*transferInfo, height uint32) error {
+func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32) error {
 	addrMap := make(map[string]*ValueInfo)
-	for _, transfer := range tranfers {
+	for _, transfer := range transfers {
 		fromKey := getAddrKey(transfer.fromAddr, transfer.contractAddr)
 		if value, present := addrMap[fromKey]; !present {
 			addrMap[fromKey] = &ValueInfo{
@@ -442,8 +446,8 @@ func dealTransferData(store *db.Store, tranfers []*transferInfo, height uint32) 
 		value, err := store.GetData([]byte(k))
 		if err != nil {
 			if err != leveldb.ErrNotFound {
-				log.Error(err)
-				panic(err)
+				log.Errorf("getData k:%s,err:%s", k, err)
+				return err
 			} else {
 				balances := make([]*Balance, 0)
 				balance := &Balance{
@@ -460,7 +464,8 @@ func dealTransferData(store *db.Store, tranfers []*transferInfo, height uint32) 
 			var params []*Balance
 			err = json.Unmarshal(value, &params)
 			if err != nil {
-				panic(err)
+				log.Errorf("unmarshal err:%s", err)
+				return err
 			}
 			sort.SliceStable(params, func(i, j int) bool {
 				if params[i].Height > params[j].Height {
@@ -491,7 +496,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 		buf, err := json.Marshal(balance.Value)
 		if err != nil {
 			log.Errorf("unmarshal err:%s", err)
-			panic(err)
+			return err
 		}
 		store.BatchPut([]byte(balance.Key), buf)
 	}
@@ -499,7 +504,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	err := store.CommitTo()
 	if err != nil {
 		log.Errorf("batchSaveBalance err:%s", err)
-		panic(err)
+		return err
 	}
 	return nil
 }
