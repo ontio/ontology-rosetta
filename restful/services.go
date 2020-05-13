@@ -92,6 +92,5 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 		return err
 	}
 	router := NewBlockchainRouter(network, asserter, p2pSvr, store)
-	go services.GetBlockHeight(store)
 	return http.ListenAndServe(fmt.Sprintf(":%d", restfulPort), router)
 }

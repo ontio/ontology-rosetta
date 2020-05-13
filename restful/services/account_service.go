@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
@@ -83,7 +84,11 @@ func (s *AccountAPIService) AccountBalance(
 		if err != nil {
 			return resp, err
 		}
-		if height > getHeightFromStore(s.store) {
+		storeHeight, errmsg := getHeightFromStore(s.store)
+		if errmsg != nil {
+			return resp, STORE_DB_ERROR
+		}
+		if height > storeHeight {
 			return resp, HEIGHT_HISTORICAL_LESS_THAN_CURRENT
 		}
 		if request.AccountIdentifier.SubAccount == nil {
@@ -258,44 +263,70 @@ type transferInfo struct {
 	height       uint32
 }
 
-func GetBlockHeight(store *db.Store) {
-	h := getHeightFromStore(store)
+func GetBlockHeight(store *db.Store) error {
+	h, err := getHeightFromStore(store)
+	if err != nil {
+		return err
+	}
 	height := bactor.GetCurrentBlockHeight()
-	for {
-		var num uint32
-		if h == 0 {
-			num = 0
-		} else {
-			num = h + 1
-		}
-		for i := num; i <= height; i++ {
-			notify, err := bactor.GetEventNotifyByHeight(i)
-			if err != nil {
-				if err == com.ErrNotFound {
-					saveBlockHeight(store, i)
+	go func() {
+		for {
+			var num uint32
+			if h == 0 {
+				num = 0
+			} else {
+				num = h + 1
+			}
+			for i := num; i <= height; i++ {
+				notify, err := bactor.GetEventNotifyByHeight(i)
+				if err != nil {
+					if err == com.ErrNotFound {
+						err := saveBlockHeight(store, i)
+						if err != nil {
+							notifyKillProcess()
+							return
+						}
+						continue
+					} else {
+						log.Errorf("GetEventNotifyByHeight height:%d,err:%s", i, err.Error())
+						notifyKillProcess()
+						return
+					}
+				}
+				if notify == nil {
+					err = saveBlockHeight(store, i)
+					if err != nil {
+						notifyKillProcess()
+						return
+					}
 					continue
-				} else {
-					log.Errorf("GetEventNotifyByHeight height:%d,err:%s", i, err.Error())
-					panic(err)
+				}
+				transfers, err := parseEventNotify(notify, i)
+				if err != nil {
+					notifyKillProcess()
+					return
+				}
+				err = dealTransferData(store, transfers, i)
+				if err != nil {
+					log.Errorf("dealTransferData %s", err)
+					notifyKillProcess()
+					return
 				}
 			}
-			if notify == nil {
-				saveBlockHeight(store, i)
-				continue
-			}
-			transfers, err := parseEventNotify(notify, i)
-			if err != nil {
-				panic(err)
-			}
-			err = dealTransferData(store, transfers, i)
-			if err != nil {
-				log.Errorf("err:%s", err)
-				panic(err)
-			}
+			h = height
+			height = bactor.GetCurrentBlockHeight()
+			<-time.After(time.Second * 20)
 		}
-		h = height
-		height = bactor.GetCurrentBlockHeight()
-		<-time.After(time.Second * 20)
+	}()
+	return nil
+}
+
+func notifyKillProcess() {
+	log.Info("notify kill rosetta process")
+	err := syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	if err != nil {
+		log.Fatalf("notifyKillProcess ,err:%s",err)
+		panic(err)
 	}
 }
 
@@ -359,7 +390,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 					log.Errorf("method HexToBytes err:%s", err)
 					return nil, err
 				}
-				if string(method) != config.OP_TYPE_TRANSFER {
+				if !strings.EqualFold(string(method), config.OP_TYPE_TRANSFER) {
 					continue
 				}
 				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
@@ -515,25 +546,26 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	return nil
 }
 
-func getHeightFromStore(store *db.Store) uint32 {
+func getHeightFromStore(store *db.Store) (uint32, error) {
 	value, err := store.GetData(getBlockHeightKey())
 	if err != nil {
 		if err != leveldb.ErrNotFound {
-			panic(err)
+			return 0, err
 		}
-		return 0
+		return 0, nil
 	}
 	height, err := strconv.ParseUint(string(value), 10, 64)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
-	return uint32(height)
+	return uint32(height), nil
 }
 
-func saveBlockHeight(store *db.Store, height uint32) {
+func saveBlockHeight(store *db.Store, height uint32) error {
 	err := store.SaveData(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	if err != nil {
 		log.Error(err)
-		panic(err)
+		return err
 	}
+	return nil
 }

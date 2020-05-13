@@ -142,4 +142,9 @@ var (
 		Message:   "historical compute balance height less than req height",
 		Retriable: false,
 	}
+	STORE_DB_ERROR = &types.Error{
+		Code:      513,
+		Message:   "db store error",
+		Retriable: true,
+	}
 )

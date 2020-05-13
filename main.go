@@ -63,6 +63,7 @@ import (
 	"github.com/ontio/ontology/txnpool/proc"
 	"github.com/ontio/ontology/validator/stateful"
 	"github.com/ontio/ontology/validator/stateless"
+	service "github.com/ontio/ontology-rosetta/restful/services"
 	"github.com/urfave/cli"
 )
 
@@ -437,6 +438,9 @@ func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.S
 	case <-time.After(time.Millisecond * 5):
 		flag = true
 	}
+	if err := service.GetBlockHeight(store); err != nil {
+		return store,err
+	}
 	log.Infof("Rosetta Restful init success port:%d",rconfig.Conf.Rosetta.Port)
 	return store, nil
 }
@@ -503,8 +507,8 @@ func waitToExit(db *ledger.Ledger, store *store.Store) {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		for sig := range sc {
-			log.Infof("Ontology received exit signal: %v.", sig.String())
-			log.Infof("closing ledger...")
+			log.Infof("Rosetta received exit signal: %v.", sig.String())
+			log.Infof("closing ledger,accstore...")
 			db.Close()
 			store.Close()
 			close(exit)
