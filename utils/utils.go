@@ -193,7 +193,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 			}
 			m := string(method)
 
-			if len(states) == 4 && strings.ToLower(m) == config.OP_TYPE_TRANSFER { //['transfer',from,to,amount]
+			if len(states) == 4 && strings.EqualFold(m, config.OP_TYPE_TRANSFER) { //['transfer',from,to,amount]
 				amtbytes, err := hex.DecodeString(states[3].(string))
 				if err != nil {
 					return nil, err
@@ -290,20 +290,20 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 }
 
 func IsONT(contractAddr string) bool {
-	return contractAddr == ONT_ADDRESS
+	return strings.EqualFold(contractAddr, ONT_ADDRESS)
 }
 
 func IsONG(contractAddr string) bool {
-	return contractAddr == ONG_ADDRESS
+	return strings.EqualFold(contractAddr, ONG_ADDRESS)
 }
 
 func isNative(contractAddr string) bool {
-	return contractAddr == ONT_ADDRESS ||
-		contractAddr == ONG_ADDRESS ||
-		contractAddr == ONTID_ADDRESS ||
-		contractAddr == PARAM_ADDRESS ||
-		contractAddr == AUTH_ADDRESS ||
-		contractAddr == GOV_ADDRESS
+	return strings.EqualFold(contractAddr, ONT_ADDRESS) ||
+		strings.EqualFold(contractAddr, ONG_ADDRESS) ||
+		strings.EqualFold(contractAddr, ONTID_ADDRESS) ||
+		strings.EqualFold(contractAddr, PARAM_ADDRESS) ||
+		strings.EqualFold(contractAddr, AUTH_ADDRESS) ||
+		strings.EqualFold(contractAddr, GOV_ADDRESS)
 }
 
 func IsOEP4(contractAddr string) bool {
