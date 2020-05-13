@@ -55,7 +55,7 @@ func NewBlockchainRouter(
 	blockAPIService := services.NewBlockAPIService(network)
 	blockAPIController := server.NewBlockAPIController(blockAPIService, asserter)
 
-	constructAPIService := services.NewConstructionAPIService(network)
+	constructAPIService := services.NewConstructionAPIService(network,store)
 	constructAPIController := server.NewConstructionAPIController(constructAPIService, asserter)
 
 	networkAPIService := services.NewNetworkAPIService(network, p2pSvr)
