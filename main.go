@@ -152,8 +152,11 @@ func main() {
 
 func startOntology(ctx *cli.Context) {
 	initLog(ctx)
-	rcfg.InitConfig(ctx)
-
+	err := rcfg.InitConfig(ctx)
+	if err != nil {
+		log.Errorf("init Rosetta Config error: %s", err)
+		return
+	}
 	log.Infof("ontology version %s", rconfig.ONTOLOGY_VERSION)
 
 	setMaxOpenFiles()
