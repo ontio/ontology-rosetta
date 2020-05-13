@@ -103,7 +103,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 		contractAddress := notify.ContractAddress.ToHexString()
 
 		//skip when not a monitored contract
-		if !isMonitoredAddress(contractAddress) {
+		if !IsMonitoredAddress(contractAddress) {
 			continue
 		}
 		states := notify.States.([]interface{})
@@ -420,6 +420,6 @@ func PreExecNeovmContract(contractAddress string, method string, params []interf
 
 }
 
-func isMonitoredAddress(contractAddress string) bool {
+func IsMonitoredAddress(contractAddress string) bool {
 	return IsONT(contractAddress) || IsONG(contractAddress) || IsOEP4(contractAddress)
 }

@@ -309,6 +309,11 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 			if value.States == nil {
 				continue
 			}
+			contractAddress := value.ContractAddress.ToHexString()
+			//skip when not a monitored contract
+			if !util.IsMonitoredAddress(contractAddress) {
+				continue
+			}
 			if reflect.TypeOf(value.States).Kind() != reflect.Slice {
 				continue
 			}
