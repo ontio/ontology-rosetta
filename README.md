@@ -1,5 +1,7 @@
 # ontology-rosetta
 Ontology node which follows Rosetta Blockchain Standard
+
+
 ## Build docker image
 
 ```sh
@@ -16,7 +18,7 @@ docker run --name ont-rosetta -d -v /opt/data/Chain:/data/Chain -v /opt/data/ros
 
 ### configuration
 
-the default configuration file is rosetta-config.json
+The default configuration file is rosetta-config.json
 
 ```
 {
@@ -44,16 +46,11 @@ the default configuration file is rosetta-config.json
 }
 ```
 
-rosetta 
-
-​	version : rosetta sdk verison
-
-​	port: rosetta restful api port
-
-monitorOEP4ScriptHash:
-
-OEP4 token codehash to monitor, you can find them on <https://explorer.ont.io/token/list/oep4/10/1>
-
+* rosetta 
+  * version : rosetta sdk verison
+  * port: rosetta restful api port
+* monitorOEP4ScriptHash:
+  * OEP4 token codehash to monitor, you can find them on <https://explorer.ont.io/token/list/oep4/10/1>
 
 
 ## Restful API
@@ -395,7 +392,7 @@ Sample:
 
 
 
-## Block
+### Block
 
 **/block**
 
