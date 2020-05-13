@@ -19,6 +19,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/urfave/cli"
@@ -64,25 +65,25 @@ var (
 	}
 )
 
-func InitConfig(ctx *cli.Context) {
+func InitConfig(ctx *cli.Context) error {
 
 	path := ctx.GlobalString(utils.GetFlagName(RosettaConfigFlag))
 	cfile, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer cfile.Close()
 
 	jsonbytes, err := ioutil.ReadAll(cfile)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = json.Unmarshal(jsonbytes, Conf)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if Conf.Rosetta == nil || Conf.Rosetta.Port > 65535 || Conf.Rosetta.Port <= 0 {
-		panic("Conf is invalid")
+		return fmt.Errorf("rosetta-config is invalid")
 	}
 }
