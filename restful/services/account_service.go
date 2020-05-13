@@ -40,6 +40,7 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/ontio/ontology-rosetta/config"
 )
 
 type AccountAPIService struct {
@@ -320,7 +321,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 			transfer.contractAddr = value.ContractAddress.ToHexString()
 			if value.ContractAddress.ToHexString() == util.ONT_ADDRESS || value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
 				method := slice.Index(0).Interface().(string)
-				if method != util.TRANSFER_METHOD {
+				if method != config.OP_TYPE_TRANSFER {
 					continue
 				}
 				transfer.fromAddr = slice.Index(1).Interface().(string)
@@ -353,7 +354,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 					log.Errorf("method HexToBytes err:%s", err)
 					return nil, err
 				}
-				if string(method) != util.TRANSFER_METHOD {
+				if string(method) != config.OP_TYPE_TRANSFER {
 					continue
 				}
 				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))

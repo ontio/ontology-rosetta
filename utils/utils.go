@@ -44,7 +44,6 @@ var (
 	ONT_ADDR_BASE58 = "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"
 	STATE_SUCCESS   = "SUCCESS"
 	STATE_FAILED    = "FAILED"
-	TRANSFER_METHOD = "transfer"
 
 	Currencies map[string]*rtypes.Currency
 )
