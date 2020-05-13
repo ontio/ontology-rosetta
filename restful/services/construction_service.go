@@ -22,6 +22,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	db "github.com/ontio/ontology-rosetta/store"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	ctypes "github.com/ontio/ontology/core/types"
@@ -32,10 +33,11 @@ import (
 
 type ConstructionAPIService struct {
 	network *types.NetworkIdentifier
+	store   *db.Store
 }
 
-func NewConstructionAPIService(network *types.NetworkIdentifier) server.ConstructionAPIServicer {
-	return &ConstructionAPIService{network: network}
+func NewConstructionAPIService(network *types.NetworkIdentifier, store *db.Store) server.ConstructionAPIServicer {
+	return &ConstructionAPIService{network: network, store: store}
 }
 
 //Get Transaction Construction Metadata. endpoint:/construction/metadata
@@ -55,7 +57,12 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	metadata := make(map[string]interface{})
 	metadata["current_block_hash"] = hash.ToHexString()
 	metadata["current_block_height"] = height
-
+	historyHeight, err := getHeightFromStore(c.store)
+	if err != nil {
+		log.Errorf("getHeightFromStore err:%s", err)
+	} else {
+		metadata["calcul_history_block_height"] = historyHeight
+	}
 	resp := &types.ConstructionMetadataResponse{Metadata: metadata}
 
 	return resp, nil

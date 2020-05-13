@@ -511,6 +511,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				return true
 			})
 			if params[len(params)-1].Amount+v.addAmount < v.subAmount {
+				log.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d",k,params[len(params)-1].Amount,v.addAmount,v.subAmount)
 				return fmt.Errorf("amount error")
 			}
 			balance := &Balance{
