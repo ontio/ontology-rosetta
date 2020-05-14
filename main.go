@@ -432,16 +432,16 @@ func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.S
 	select {
 	case <-exitCh:
 		if !flag {
-			log.Errorf("Rosetta Restful init failed:%s",errmsg)
-			return store,errmsg
+			log.Errorf("Rosetta Restful init failed:%s", errmsg)
+			return store, errmsg
 		}
 	case <-time.After(time.Millisecond * 5):
 		flag = true
 	}
 	if err := service.GetBlockHeight(store); err != nil {
-		return store,err
+		return store, err
 	}
-	log.Infof("Rosetta Restful init success port:%d",rconfig.Conf.Rosetta.Port)
+	log.Infof("Rosetta Restful init success port:%d", rconfig.Conf.Rosetta.Port)
 	return store, nil
 }
 

@@ -18,6 +18,7 @@
 package services
 
 import (
+	"github.com/ontio/ontology/common"
 	"testing"
 
 	"github.com/ontio/ontology-rosetta/store"
@@ -52,4 +53,43 @@ func TestGetHeightFromStore(t *testing.T) {
 		t.Error(err)
 	}
 	t.Logf(":%d", amount)
+}
+
+func TestSeriaBalance(t *testing.T) {
+	balance := &Balance{
+		Height:15,
+		Amount:6000,
+	}
+	sink := common.NewZeroCopySink(nil)
+	balance.Serialization(sink)
+	b := &Balance{}
+	source := common.NewZeroCopySource(sink.Bytes())
+	err := b.Deserialization(source)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("%v",b)
+}
+
+func TestSeriaBalances(t *testing.T) {
+	balances := &Balances{
+		Value:make([]*Balance,0),
+	}
+	balances.Value = append(balances.Value, &Balance{Height: 7, Amount: 20})
+	balances.Value = append(balances.Value, &Balance{Height: 15, Amount: 9})
+	balances.Value = append(balances.Value, &Balance{Height: 25, Amount: 15})
+	balances.StartBlockNum = 3
+	balances.EndBlockNum = 25
+	buf := balances.Serialization()
+	b := &Balances{
+		Value:make([]*Balance,0),
+	}
+	err := b.Deserialization(buf)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("%d:%d",b.StartBlockNum,b.EndBlockNum)
+	for _,v := range  b.Value {
+		t.Logf(":%v",v)
+	}
 }

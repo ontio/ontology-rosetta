@@ -48,8 +48,9 @@ type Config struct {
 }
 
 type RosettaConfig struct {
-	Version string `json:"version"`
-	Port    int32  `json:"port"`
+	Version       string `json:"version"`
+	Port          int32  `json:"port"`
+	BlockWaitTime uint32 `json:"block_wait_time"`
 }
 
 const (
