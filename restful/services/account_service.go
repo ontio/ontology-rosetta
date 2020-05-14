@@ -370,7 +370,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				toAddr := slice.Index(2).Interface().(string)
 				amount := slice.Index(3).Interface().(float64)
 				if execute.State == event.CONTRACT_STATE_FAIL {
-					if transfer.toAddr == util.GOVERNANCE_ADDR && value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
+					if toAddr == util.GOVERNANCE_ADDR && value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
 						transfer.height = height
 						transfer.fromAddr = fromAddr
 						transfer.toAddr = toAddr
@@ -393,18 +393,22 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				if !strings.EqualFold(string(method), config.OP_TYPE_TRANSFER) {
 					continue
 				}
-				addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
-				if err != nil {
-					log.Errorf("addFromTmp HexToBytes height:%d, err:%s", height, err)
-					return nil, err
+				tmpAddr := slice.Index(1).Interface().(string)
+				if tmpAddr != util.OPE4_ADDR_BASE {
+					addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
+					if err != nil {
+						log.Errorf("addFromTmp HexToBytes height:%d, err:%s", height, err)
+						return nil, err
+					}
+					addFrom, err := common.AddressParseFromBytes(addFromTmp)
+					if err != nil {
+						log.Errorf("addFrom addrFrom parse addr height:%d,failed:%s", height, err)
+						return nil, err
+					}
+					transfer.fromAddr = addFrom.ToBase58()
+				} else {
+					transfer.fromAddr = util.OPE4_ADDR_BASE
 				}
-				addFrom, err := common.AddressParseFromBytes(addFromTmp)
-				if err != nil {
-					log.Errorf("addFrom addrFrom parse addr height:%d,failed:%s", height, err)
-					return nil, err
-				}
-				transfer.fromAddr = addFrom.ToBase58()
-
 				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
 				if err != nil {
 					log.Errorf("addrToTmp HexToBytes height:%d,err:%s", height, err)
