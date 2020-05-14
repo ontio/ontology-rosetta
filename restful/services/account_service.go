@@ -251,7 +251,7 @@ func getHistoryBalance(store *db.Store, height uint32, addr, contract string) (u
 			continue
 		}
 		sort.SliceStable(b.Value, func(i, j int) bool {
-			if b.Value[i].Height > b.Value[j].Height {
+			if b.Value[i].Height >= b.Value[j].Height {
 				return false
 			}
 			return true
@@ -343,9 +343,6 @@ func notifyKillProcess() {
 func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*transferInfo, error) {
 	transfers := make([]*transferInfo, 0)
 	for _, execute := range execNotify {
-		if execute.State == event.CONTRACT_STATE_FAIL {
-			continue
-		}
 		for _, value := range execute.Notify {
 			if value.States == nil {
 				continue
@@ -363,36 +360,29 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				continue
 			}
 			transfer := &transferInfo{}
-			transfer.height = height
 			transfer.contractAddr = value.ContractAddress.ToHexString()
 			if value.ContractAddress.ToHexString() == util.ONT_ADDRESS || value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
 				method := slice.Index(0).Interface().(string)
 				if method != config.OP_TYPE_TRANSFER {
 					continue
 				}
-				transfer.fromAddr = slice.Index(1).Interface().(string)
-				transfer.toAddr = slice.Index(2).Interface().(string)
+				fromAddr := slice.Index(1).Interface().(string)
+				toAddr := slice.Index(2).Interface().(string)
 				amount := slice.Index(3).Interface().(float64)
-				if value.ContractAddress.ToHexString() == util.ONT_ADDRESS {
-					coinAmount := strconv.FormatFloat(amount, 'f', 0, 64)
-					value, err := strconv.ParseUint(coinAmount, 10, 64)
-					if err != nil {
-						log.Errorf("ont parse value height:%d err:%s", height, err)
-						return nil, err
+				if execute.State == event.CONTRACT_STATE_FAIL {
+					if transfer.toAddr == util.GOVERNANCE_ADDR && value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
+						transfer.height = height
+						transfer.fromAddr = fromAddr
+						transfer.toAddr = toAddr
+						transfer.amount = uint64(int(amount))
+					} else {
+						continue
 					}
-					transfer.amount = value
-				} else if value.ContractAddress.ToHexString() == util.ONG_ADDRESS {
-					coinAmount := strconv.FormatFloat(amount, 'f', 9, 64)
-					coinamount := strings.Split(coinAmount, ".")
-					if len(coinamount) > 1 {
-						coinAmount = coinamount[0]
-					}
-					value, err := strconv.ParseUint(coinAmount, 10, 64)
-					if err != nil {
-						log.Errorf("ong parse value height:%d err:%s", height, err)
-						return nil, err
-					}
-					transfer.amount = value
+				} else {
+					transfer.height = height
+					transfer.fromAddr = fromAddr
+					transfer.toAddr = toAddr
+					transfer.amount = uint64(int(amount))
 				}
 			} else {
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
@@ -551,9 +541,12 @@ func getBlockHeightKey() []byte {
 }
 
 func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32) error {
+	if len(transfers) == 0 {
+		return nil
+	}
 	addrMap := make(map[string]*ValueInfo)
 	for _, transfer := range transfers {
-		if transfer.fromAddr != util.ONT_ADDR_BASE58  &&  transfer.fromAddr != util.OPE4_ADDR_BASE{
+		if transfer.fromAddr != util.ONT_ADDR_BASE58 && transfer.fromAddr != util.OPE4_ADDR_BASE {
 			fromKey := getAddrKey(transfer.fromAddr, transfer.contractAddr)
 			if value, present := addrMap[fromKey]; !present {
 				addrMap[fromKey] = &ValueInfo{
@@ -613,7 +606,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				return err
 			}
 			sort.SliceStable(b.Value, func(i, j int) bool {
-				if b.Value[i].Height > b.Value[j].Height {
+				if b.Value[i].Height >= b.Value[j].Height {
 					return false
 				}
 				return true
