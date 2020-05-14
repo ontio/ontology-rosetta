@@ -20,6 +20,8 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common"
@@ -29,8 +31,6 @@ import (
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
-	"github.com/ontio/ontology/smartcontract/event"
-	"strings"
 )
 
 var (
@@ -43,13 +43,13 @@ var (
 
 	ONT_ADDR_BASE58 = "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"
 	GOVERNANCE_ADDR = "AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK"
-	OPE4_ADDR_BASE = "00"
+	OPE4_ADDR_BASE  = "00"
 	STATE_SUCCESS   = "SUCCESS"
 	STATE_FAILED    = "FAILED"
 
-	Currencies map[string]*rtypes.Currency
+	Currencies                 map[string]*rtypes.Currency
 	EACH_PAGE_SVAE_BALANCE_NUM = 10
-	FIRST_PAGE_NUM = "1"
+	FIRST_PAGE_NUM             = "1"
 )
 
 func InitCurrencies() error {
@@ -99,9 +99,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 		return nil, err
 	}
 	result := config.STATUS_SUCCESS.Status
-	if events.State == event.CONTRACT_STATE_FAIL {
-		result = config.STATUS_FAILED.Status
-	}
 	idx := 0
 	for _, notify := range events.Notify {
 		contractAddress := notify.ContractAddress.ToHexString()
