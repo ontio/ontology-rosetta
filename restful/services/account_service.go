@@ -20,9 +20,7 @@ package services
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"github.com/ontio/ontology/errors"
 	"io"
 	"reflect"
 	"sort"
@@ -40,6 +38,7 @@ import (
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	com "github.com/ontio/ontology/core/store/common"
+	"github.com/ontio/ontology/errors"
 	bactor "github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
 	"github.com/ontio/ontology/smartcontract/event"
@@ -230,7 +229,7 @@ func getBlockIdentifierHeight(blockIdentifier *types.PartialBlockIdentifier) (ui
 
 func getHistoryBalance(store *db.Store, height uint32, addr, contract string) (uint64, error) {
 	key := getAddrKey(addr, contract)
-	value, err := store.GetData([]byte(key))
+	pageNum, err := store.GetData([]byte(key))
 	if err != nil {
 		if err != leveldb.ErrNotFound {
 			return 0, err
@@ -238,20 +237,29 @@ func getHistoryBalance(store *db.Store, height uint32, addr, contract string) (u
 			return 0, nil
 		}
 	}
-	var balances []*Balance
-	err = json.Unmarshal(value, &balances)
+	page_num, err := strconv.ParseInt(string(pageNum), 10, 32)
 	if err != nil {
 		return 0, err
 	}
-	sort.SliceStable(balances, func(i, j int) bool {
-		if balances[i].Height > balances[j].Height {
-			return false
+	for i := page_num; i > 0; i-- {
+		num := strconv.FormatInt(int64(i), 10)
+		b, err := GetAccBalancesByPageNum(store, key, string(num))
+		if err != nil {
+			return 0, nil
 		}
-		return true
-	})
-	for i := len(balances) - 1; i >= 0; i-- {
-		if height >= balances[i].Height {
-			return balances[i].Amount, nil
+		if b.StartBlockNum > height {
+			continue
+		}
+		sort.SliceStable(b.Value, func(i, j int) bool {
+			if b.Value[i].Height > b.Value[j].Height {
+				return false
+			}
+			return true
+		})
+		for i := len(b.Value) - 1; i >= 0; i-- {
+			if height >= b.Value[i].Height {
+				return b.Value[i].Amount, nil
+			}
 		}
 	}
 	return 0, nil
@@ -450,11 +458,11 @@ func (self *Balance) Serialization(sink *common.ZeroCopySink) {
 }
 
 func (self *Balance) Deserialization(source *common.ZeroCopySource) error {
-	h,eof := source.NextUint32()
+	h, eof := source.NextUint32()
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint32, deserialize height error!")
 	}
-	a,eof := source.NextUint64()
+	a, eof := source.NextUint64()
 	if eof {
 		return errors.NewDetailErr(io.ErrUnexpectedEOF, errors.ErrNoCode, "serialization.ReadUint64, deserialize amount error!")
 	}
@@ -464,13 +472,17 @@ func (self *Balance) Deserialization(source *common.ZeroCopySource) error {
 }
 
 type Balances struct {
-	Value []*Balance `json:"value"`
+	StartBlockNum uint32
+	EndBlockNum   uint32
+	Value         []*Balance `json:"value"`
 }
 
-func (self *Balances) Serialization() []byte{
+func (self *Balances) Serialization() []byte {
 	sink := common.NewZeroCopySink(nil)
+	sink.WriteUint32(self.StartBlockNum)
+	sink.WriteUint32(self.EndBlockNum)
 	sink.WriteVarUint(uint64(len(self.Value)))
-	for _,balance := range self.Value {
+	for _, balance := range self.Value {
 		s := common.NewZeroCopySink(nil)
 		balance.Serialization(s)
 		sink.WriteVarBytes(s.Bytes())
@@ -478,8 +490,20 @@ func (self *Balances) Serialization() []byte{
 	return sink.Bytes()
 }
 
-func (self *Balances) Deserialization(values []byte) error  {
+func (self *Balances) Deserialization(values []byte) error {
 	source := common.NewZeroCopySource(values)
+	startBlockNum, eof := source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	self.StartBlockNum = startBlockNum
+
+	endBlockNum, eof := source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	self.EndBlockNum = endBlockNum
+
 	n, _, irregular, eof := source.NextVarUint()
 	if eof {
 		return io.ErrUnexpectedEOF
@@ -501,7 +525,7 @@ func (self *Balances) Deserialization(values []byte) error  {
 		if err != nil {
 			return err
 		}
-		self.Value = append(self.Value,balance)
+		self.Value = append(self.Value, balance)
 	}
 	return nil
 }
@@ -513,6 +537,13 @@ type BalanceInfo struct {
 
 func getAddrKey(addr, contractAddr string) string {
 	return addr + ":" + contractAddr
+}
+func getAccountKey(addr, contractAddr, pageNum string) string {
+	return addr + ":" + contractAddr + ":" + pageNum
+}
+
+func getAccKey(key, pageNum string) string {
+	return key + ":" + pageNum
 }
 
 func getBlockHeightKey() []byte {
@@ -545,16 +576,20 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 
 	balanceInfos := make([]*BalanceInfo, 0)
 	for k, v := range addrMap {
-		value, err := store.GetData([]byte(k))
+		pageNum, err := store.GetData([]byte(k))
 		if err != nil {
 			if err != leveldb.ErrNotFound {
-				log.Errorf("getData height:%d,k:%s,err:%s", height, k, err)
+				log.Errorf("getPageNum height:%d,k:%s,err:%s", height, k, err)
 				return err
 			} else {
 				balances := make([]*Balance, 0)
+				if v.addAmount < v.subAmount {
+					log.Errorf("amount calcul err,addAmount:%d,subAmount:%d",v.addAmount,v.subAmount)
+					return fmt.Errorf("amount calcul err,addAmount:%d,subAmount:%d",v.addAmount,v.subAmount)
+				}
 				balance := &Balance{
 					Height: height,
-					Amount: v.addAmount - v.subAmount, //need check
+					Amount: v.addAmount - v.subAmount,
 				}
 				balances = append(balances, balance)
 				balanceInfos = append(balanceInfos, &BalanceInfo{
@@ -563,25 +598,33 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				})
 			}
 		} else {
-			var params []*Balance
-			err = json.Unmarshal(value, &params)
+			buf, err := store.GetData([]byte(getAddrKey(k, string(pageNum))))
 			if err != nil {
-				log.Errorf("unmarshal err:%s,height:%d", err, height)
+				log.Errorf("GetData height:%d,err:%s", height, err)
 				return err
 			}
-			sort.SliceStable(params, func(i, j int) bool {
-				if params[i].Height > params[j].Height {
+			b := &Balances{
+				Value: make([]*Balance, 0),
+			}
+			err = b.Deserialization(buf)
+			if err != nil {
+				log.Errorf("Deserialization height:%d,err:%s", height, err)
+				return err
+			}
+			sort.SliceStable(b.Value, func(i, j int) bool {
+				if b.Value[i].Height > b.Value[j].Height {
 					return false
 				}
 				return true
 			})
-			if params[len(params)-1].Amount+v.addAmount < v.subAmount {
-				log.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, params[len(params)-1].Amount, v.addAmount, v.subAmount, height)
+			if b.Value[len(b.Value)-1].Amount+v.addAmount < v.subAmount {
+				log.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, b.Value[len(b.Value)-1].Amount, v.addAmount, v.subAmount, height)
 				return fmt.Errorf("amount error")
 			}
+			var params []*Balance
 			balance := &Balance{
 				Height: height,
-				Amount: params[len(params)-1].Amount + v.addAmount - v.subAmount,
+				Amount: b.Value[len(b.Value)-1].Amount + v.addAmount - v.subAmount,
 			}
 			params = append(params, balance)
 			balanceInfos = append(balanceInfos, &BalanceInfo{
@@ -596,12 +639,100 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) error {
 	store.NewBatch()
 	for _, balance := range balances {
-		buf, err := json.Marshal(balance.Value)
+		pageNum, err := GetAccountPage(store, balance.Key)
 		if err != nil {
-			log.Errorf("unmarshal err:%s,height:%d", err, height)
 			return err
 		}
-		store.BatchPut([]byte(balance.Key), buf)
+		if pageNum == "" {
+			page_num, err := strconv.ParseInt(pageNum, 10, 32)
+			if err != nil {
+				return err
+			}
+			if len(balance.Value)/util.EACH_PAGE_SVAE_BALANCE_NUM > 0 {
+				pageNum := len(balance.Value) / util.EACH_PAGE_SVAE_BALANCE_NUM
+				for i := 0; i <= pageNum; i++ {
+					b := &Balances{
+						Value: make([]*Balance, 0),
+					}
+					b.StartBlockNum = height
+					b.EndBlockNum = height
+					for k, v := range balance.Value {
+						if k < i*util.EACH_PAGE_SVAE_BALANCE_NUM {
+							continue
+						}
+						b.Value = append(b.Value, v)
+						if len(b.Value) == util.EACH_PAGE_SVAE_BALANCE_NUM {
+							break
+						}
+					}
+					if len(b.Value) > 0 {
+						buf := b.Serialization()
+						pageNum := strconv.FormatInt(int64(i+1+int(page_num)), 10)
+						store.BatchPut([]byte(getAccKey(balance.Key,pageNum)), buf)
+						store.BatchPut([]byte(balance.Key), []byte(pageNum))
+					}
+				}
+			} else {
+				b := &Balances{
+					Value: make([]*Balance, 0),
+				}
+				b.StartBlockNum = height
+				b.EndBlockNum = height
+				for _, v := range balance.Value {
+					b.Value = append(b.Value, v)
+				}
+				buf := b.Serialization()
+				store.BatchPut([]byte(getAccKey(balance.Key,util.FIRST_PAGE_NUM)), buf)
+				store.BatchPut([]byte(balance.Key), []byte(util.FIRST_PAGE_NUM))
+			}
+		} else {
+			b, err := GetAccBalancesByPageNum(store, balance.Key, pageNum)
+			if err != nil {
+				log.Errorf("GetAccBalancesByPageNum height:%d,err:%s", height, err)
+				return err
+			}
+			if (len(b.Value)+len(balance.Value))/util.EACH_PAGE_SVAE_BALANCE_NUM > 0 {
+				b.EndBlockNum = height
+				var index int
+				for k, v := range balance.Value {
+					b.Value = append(b.Value, v)
+					index = k
+					if len(b.Value) == util.EACH_PAGE_SVAE_BALANCE_NUM {
+						break
+					}
+				}
+				buf := b.Serialization()
+				store.BatchPut([]byte(balance.Key), buf)
+				pageNum := (len(balance.Value) - index) / util.EACH_PAGE_SVAE_BALANCE_NUM
+				for i := 0; i <= pageNum; i++ {
+					b := &Balances{
+						Value: make([]*Balance, 0),
+					}
+					b.StartBlockNum = height
+					b.EndBlockNum = height
+					for k, v := range balance.Value {
+						if k < i*util.EACH_PAGE_SVAE_BALANCE_NUM+index {
+							continue
+						}
+						b.Value = append(b.Value, v)
+					}
+					if len(b.Value) > 0 {
+						buf := b.Serialization()
+						store.BatchPut([]byte(balance.Key), buf)
+						pageNum := strconv.FormatInt(int64(i+1), 10)
+						store.BatchPut([]byte(getAccKey(balance.Key,pageNum)), buf)
+						store.BatchPut([]byte(balance.Key), []byte(pageNum))
+					}
+				}
+			} else {
+				b.EndBlockNum = height
+				for _, v := range balance.Value {
+					b.Value = append(b.Value, v)
+				}
+				buf := b.Serialization()
+				store.BatchPut([]byte(balance.Key), buf)
+			}
+		}
 	}
 	store.BatchPut(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	err := store.CommitTo()
@@ -610,6 +741,35 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 		return err
 	}
 	return nil
+}
+
+func GetAccountPage(store *db.Store, key string) (string, error) {
+	value, err := store.GetData([]byte(key))
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return "", err
+		}
+		return "", nil
+	}
+	return string(value), nil
+}
+
+func GetAccBalancesByPageNum(store *db.Store, key, pageNum string) (*Balances, error) {
+	value, err := store.GetData([]byte(key + ":" + pageNum))
+	if err != nil {
+		if err != leveldb.ErrNotFound {
+			return nil, err
+		}
+		return nil, nil
+	}
+	b := &Balances{
+		Value: make([]*Balance, 0),
+	}
+	err = b.Deserialization(value)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func getHeightFromStore(store *db.Store) (uint32, error) {
@@ -634,4 +794,12 @@ func saveBlockHeight(store *db.Store, height uint32) error {
 		return err
 	}
 	return nil
+}
+
+func getPageNum(pageNum string) (int, error) {
+	page_num, err := strconv.ParseInt(pageNum, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int(page_num), nil
 }

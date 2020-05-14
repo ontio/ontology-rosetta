@@ -46,6 +46,8 @@ var (
 	STATE_FAILED    = "FAILED"
 
 	Currencies map[string]*rtypes.Currency
+	EACH_PAGE_SVAE_BALANCE_NUM = 10
+	FIRST_PAGE_NUM = "1"
 )
 
 func InitCurrencies() error {
