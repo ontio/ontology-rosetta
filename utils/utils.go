@@ -42,6 +42,7 @@ var (
 	GOV_ADDRESS   = "0700000000000000000000000000000000000000"
 
 	ONT_ADDR_BASE58 = "AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM"
+	OPE4_ADDR_BASE = "00"
 	STATE_SUCCESS   = "SUCCESS"
 	STATE_FAILED    = "FAILED"
 
@@ -204,7 +205,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 				subacc := &rtypes.SubAccountIdentifier{Address: contractAddress}
 
 				//all mint token transfer should ignore
-				if len(states[1].(string)) > 0 && states[1].(string) != "00" {
+				if len(states[1].(string)) > 0 && states[1].(string) != OPE4_ADDR_BASE {
 					fromOpt := new(rtypes.Operation)
 					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),

@@ -553,16 +553,17 @@ func getBlockHeightKey() []byte {
 func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32) error {
 	addrMap := make(map[string]*ValueInfo)
 	for _, transfer := range transfers {
-		fromKey := getAddrKey(transfer.fromAddr, transfer.contractAddr)
-		if value, present := addrMap[fromKey]; !present {
-			addrMap[fromKey] = &ValueInfo{
-				height:    height,
-				subAmount: transfer.amount,
+		if transfer.fromAddr != util.ONT_ADDR_BASE58  &&  transfer.fromAddr != util.OPE4_ADDR_BASE{
+			fromKey := getAddrKey(transfer.fromAddr, transfer.contractAddr)
+			if value, present := addrMap[fromKey]; !present {
+				addrMap[fromKey] = &ValueInfo{
+					height:    height,
+					subAmount: transfer.amount,
+				}
+			} else {
+				value.subAmount = value.subAmount + transfer.amount
 			}
-		} else {
-			value.subAmount = value.subAmount + transfer.amount
 		}
-
 		toKey := getAddrKey(transfer.toAddr, transfer.contractAddr)
 		if value, present := addrMap[toKey]; !present {
 			addrMap[toKey] = &ValueInfo{
@@ -584,8 +585,8 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 			} else {
 				balances := make([]*Balance, 0)
 				if v.addAmount < v.subAmount {
-					log.Errorf("amount calcul err,addAmount:%d,subAmount:%d",v.addAmount,v.subAmount)
-					return fmt.Errorf("amount calcul err,addAmount:%d,subAmount:%d",v.addAmount,v.subAmount)
+					log.Errorf("amount height:%d calcul err,addAmount:%d,subAmount:%d k:%s", height, v.addAmount, v.subAmount, k)
+					return fmt.Errorf("amount calcul err,addAmount:%d,subAmount:%d", v.addAmount, v.subAmount)
 				}
 				balance := &Balance{
 					Height: height,
@@ -644,10 +645,6 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 			return err
 		}
 		if pageNum == "" {
-			page_num, err := strconv.ParseInt(pageNum, 10, 32)
-			if err != nil {
-				return err
-			}
 			if len(balance.Value)/util.EACH_PAGE_SVAE_BALANCE_NUM > 0 {
 				pageNum := len(balance.Value) / util.EACH_PAGE_SVAE_BALANCE_NUM
 				for i := 0; i <= pageNum; i++ {
@@ -667,8 +664,8 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 					}
 					if len(b.Value) > 0 {
 						buf := b.Serialization()
-						pageNum := strconv.FormatInt(int64(i+1+int(page_num)), 10)
-						store.BatchPut([]byte(getAccKey(balance.Key,pageNum)), buf)
+						pageNum := strconv.FormatInt(int64(i+1), 10)
+						store.BatchPut([]byte(getAccKey(balance.Key, pageNum)), buf)
 						store.BatchPut([]byte(balance.Key), []byte(pageNum))
 					}
 				}
@@ -682,10 +679,14 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 					b.Value = append(b.Value, v)
 				}
 				buf := b.Serialization()
-				store.BatchPut([]byte(getAccKey(balance.Key,util.FIRST_PAGE_NUM)), buf)
+				store.BatchPut([]byte(getAccKey(balance.Key, util.FIRST_PAGE_NUM)), buf)
 				store.BatchPut([]byte(balance.Key), []byte(util.FIRST_PAGE_NUM))
 			}
 		} else {
+			page_num, err := strconv.ParseInt(pageNum, 10, 32)
+			if err != nil {
+				return err
+			}
 			b, err := GetAccBalancesByPageNum(store, balance.Key, pageNum)
 			if err != nil {
 				log.Errorf("GetAccBalancesByPageNum height:%d,err:%s", height, err)
@@ -703,8 +704,8 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 				}
 				buf := b.Serialization()
 				store.BatchPut([]byte(balance.Key), buf)
-				pageNum := (len(balance.Value) - index) / util.EACH_PAGE_SVAE_BALANCE_NUM
-				for i := 0; i <= pageNum; i++ {
+				pageNumber := (len(balance.Value) - index) / util.EACH_PAGE_SVAE_BALANCE_NUM
+				for i := 0; i <= pageNumber; i++ {
 					b := &Balances{
 						Value: make([]*Balance, 0),
 					}
@@ -719,8 +720,8 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 					if len(b.Value) > 0 {
 						buf := b.Serialization()
 						store.BatchPut([]byte(balance.Key), buf)
-						pageNum := strconv.FormatInt(int64(i+1), 10)
-						store.BatchPut([]byte(getAccKey(balance.Key,pageNum)), buf)
+						pageNum := strconv.FormatInt(int64(i+1)+page_num, 10)
+						store.BatchPut([]byte(getAccKey(balance.Key, pageNum)), buf)
 						store.BatchPut([]byte(balance.Key), []byte(pageNum))
 					}
 				}
@@ -730,7 +731,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 					b.Value = append(b.Value, v)
 				}
 				buf := b.Serialization()
-				store.BatchPut([]byte(balance.Key), buf)
+				store.BatchPut([]byte(getAccKey(balance.Key, pageNum)), buf)
 			}
 		}
 	}
@@ -794,12 +795,4 @@ func saveBlockHeight(store *db.Store, height uint32) error {
 		return err
 	}
 	return nil
-}
-
-func getPageNum(pageNum string) (int, error) {
-	page_num, err := strconv.ParseInt(pageNum, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return int(page_num), nil
 }
