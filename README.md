@@ -27,21 +27,7 @@ The default configuration file is rosetta-config.json
     "port": 8080
   },
 
-  "monitorOEP4ScriptHash": ["c27b58e3743062689fdcf1eae3ef5dc55b5ae68a",
-  "e5a49d7fd57e7178e189d3965d1ee64368a1036d",
-  "a0fcb515a1d42b4aaf9734aabf40411fa93f6849",
-  "6df81bc4b30189b0987b54f1d02b62f732cfd8a1",
-  "073e70265590c8e9c3617d115b1e4a36b26dd455",
-  "ecc3ba5b1a2afcfcafa1a3f3b3a6e61d3018ac94",
-  "b71fc841b203bcf08e81311131671885db689faf",
-  "bdc9c45c6d706b54cf5772c48d43661fa7db25cd",
-  "6bbc07bae862db0d7867e4e5b1a13c663e2b4bc8",
-  "f916e8ebccbf27049b8444073032c27aa5c5c392",
-  "78b98deed62aa708eaf6de85843734ecdfb14c1b",
-  "24b3a4a8736a2ef70344bbdb4a9de82f0147caab",
-  "b52b63902ed5d6455cd7929a13613fc1b88a056f",
-  "59287ef2517ba65fb70fba8f0118d7fb4ed25fbc",
-  "6c80f3a5c183edee7693a038ca8c476fb0d6ac91"]
+  "monitorOEP4ScriptHash": []
 
 }
 ```
@@ -65,7 +51,7 @@ Based on rosetta protocol, ontology-rosetta node provides following Restful APIs
 
 Request:
 
-```
+```json
 {
     "metadata": {}
 }
@@ -75,7 +61,7 @@ Response:
 
 Sample
 
-```
+```json
 {
     "network_identifiers": [
         {
@@ -94,7 +80,7 @@ Request:
 
 Use the available "network_identifier" from /network/list
 
-```
+```json
 {
     "network_identifier":  {
             "blockchain": "ont",
@@ -108,7 +94,7 @@ Response:
 
 Sample
 
-```
+```json
 {
     "version": {
         "rosetta_version": "1.3.1",
@@ -249,7 +235,7 @@ Request:
 
 Use the available "network_identifier" from /network/list
 
-```
+```json
 {
     "network_identifier":  {
             "blockchain": "ont",
@@ -263,7 +249,7 @@ Response:
 
 Sample
 
-```
+```json
 {
     "current_block_identifier": {
         "index": 4789126,
@@ -604,11 +590,18 @@ Sample
 ```json
 {
     "metadata": {
-        "current_block_hash": "9e83f6310aff1903e3fa21fe9eae6c8a013fa62dbfc155d32af1bcec7b68a513",
-        "current_block_height": 212635
+        "calcul_history_block_height": 3627077,
+        "current_block_hash": "832ed41b4e79641288ea8cd341b7949ee4773c8abb8288f4386422f9248df911",
+        "current_block_height": 3627179
     }
 }
 ```
+
+- calcul_history_block_height:  current account balance calculate block height.
+
+
+- current_block_hash: current block hash.
+- current_block_height: current block height.
 
 
 
