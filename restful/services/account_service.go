@@ -385,9 +385,6 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 					transfer.amount = uint64(int(amount))
 				}
 			} else {
-				if !util.IsOEP4(value.ContractAddress.ToHexString()) {
-					continue
-				}
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
 					log.Errorf("method HexToBytes height:%d err:%s", height, err)

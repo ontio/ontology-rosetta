@@ -32,9 +32,11 @@ import (
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology-eventbus/actor"
 	alog "github.com/ontio/ontology-eventbus/log"
+	cfg "github.com/ontio/ontology-rosetta/config"
 	rcfg "github.com/ontio/ontology-rosetta/config"
 	rconfig "github.com/ontio/ontology-rosetta/config"
 	services "github.com/ontio/ontology-rosetta/restful"
+	service "github.com/ontio/ontology-rosetta/restful/services"
 	"github.com/ontio/ontology-rosetta/store"
 	rutil "github.com/ontio/ontology-rosetta/utils"
 	"github.com/ontio/ontology/account"
@@ -43,7 +45,6 @@ import (
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
-	cfg "github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/consensus"
 	"github.com/ontio/ontology/core/genesis"
@@ -64,7 +65,6 @@ import (
 	"github.com/ontio/ontology/txnpool/proc"
 	"github.com/ontio/ontology/validator/stateful"
 	"github.com/ontio/ontology/validator/stateless"
-	service "github.com/ontio/ontology-rosetta/restful/services"
 	"github.com/urfave/cli"
 )
 
@@ -440,7 +440,7 @@ func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.S
 		flag = true
 	}
 	waitTime := cfg.Conf.Rosetta.BlockWaitTime
-	if err := service.GetBlockHeight(store,waitTime); err != nil {
+	if err := service.GetBlockHeight(store, waitTime); err != nil {
 		return store, err
 	}
 	log.Infof("Rosetta Restful init success port:%d", rconfig.Conf.Rosetta.Port)

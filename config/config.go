@@ -20,11 +20,12 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/urfave/cli"
-	"io/ioutil"
-	"os"
 )
 
 const OP_TYPE_TRANSFER = "transfer"
@@ -67,7 +68,6 @@ var (
 )
 
 func InitConfig(ctx *cli.Context) error {
-
 	path := ctx.GlobalString(utils.GetFlagName(RosettaConfigFlag))
 	cfile, err := os.Open(path)
 	if err != nil {

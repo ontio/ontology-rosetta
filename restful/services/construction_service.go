@@ -81,12 +81,12 @@ func (c ConstructionAPIService) ConstructionSubmit(
 
 	txbytes, err := common.HexToBytes(txStr)
 	if err != nil {
-		log.Errorf("[ConstructionSubmit]HexToBytes failed:%s",err.Error())
+		log.Errorf("[ConstructionSubmit]HexToBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	txn, err := ctypes.TransactionFromRawBytes(txbytes)
 	if err != nil {
-		log.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s",err.Error())
+		log.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
