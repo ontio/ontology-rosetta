@@ -20,9 +20,9 @@ package services
 import (
 	"testing"
 
-	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology-rosetta/store"
 	util "github.com/ontio/ontology-rosetta/utils"
+	"github.com/ontio/ontology/common"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -22,9 +22,9 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	log "github.com/ontio/ontology-rosetta/common"
 	db "github.com/ontio/ontology-rosetta/store"
 	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/log"
 	ctypes "github.com/ontio/ontology/core/types"
 	ontErrors "github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/http/base/actor"
@@ -59,7 +59,7 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	metadata["current_block_height"] = height
 	historyHeight, err := getHeightFromStore(c.store)
 	if err != nil {
-		log.Errorf("getHeightFromStore err:%s", err)
+		log.RosetaaLog.Errorf("getHeightFromStore err:%s", err)
 	} else {
 		metadata["calcul_history_block_height"] = historyHeight
 	}
@@ -81,16 +81,16 @@ func (c ConstructionAPIService) ConstructionSubmit(
 
 	txbytes, err := common.HexToBytes(txStr)
 	if err != nil {
-		log.Errorf("[ConstructionSubmit]HexToBytes failed:%s", err.Error())
+		log.RosetaaLog.Errorf("[ConstructionSubmit]HexToBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	txn, err := ctypes.TransactionFromRawBytes(txbytes)
 	if err != nil {
-		log.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s", err.Error())
+		log.RosetaaLog.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
-		log.Errorf("[ConstructionSubmit]SendTxToPool failed:%s", desc)
+		log.RosetaaLog.Errorf("[ConstructionSubmit]SendTxToPool failed:%s", desc)
 		return nil, COMMIT_TX_FAILED
 	}
 
