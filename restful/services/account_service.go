@@ -273,7 +273,7 @@ type transferInfo struct {
 	height       uint32
 }
 
-func GetBlockHeight(store *db.Store) error {
+func GetBlockHeight(store *db.Store,waitTime uint32) error {
 	h, err := getHeightFromStore(store)
 	if err != nil {
 		return err
@@ -325,7 +325,7 @@ func GetBlockHeight(store *db.Store) error {
 			}
 			h = height
 			height = bactor.GetCurrentBlockHeight()
-			<-time.After(time.Second * 1)
+			<-time.After(time.Second * time.Duration(waitTime))
 		}
 	}()
 	return nil
@@ -385,6 +385,9 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 					transfer.amount = uint64(int(amount))
 				}
 			} else {
+				if !util.IsOEP4(value.ContractAddress.ToHexString()) {
+					continue
+				}
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
 					log.Errorf("method HexToBytes height:%d err:%s", height, err)

@@ -43,6 +43,7 @@ import (
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
+	cfg "github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/consensus"
 	"github.com/ontio/ontology/core/genesis"
@@ -438,7 +439,8 @@ func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.S
 	case <-time.After(time.Millisecond * 5):
 		flag = true
 	}
-	if err := service.GetBlockHeight(store); err != nil {
+	waitTime := cfg.Conf.Rosetta.BlockWaitTime
+	if err := service.GetBlockHeight(store,waitTime); err != nil {
 		return store, err
 	}
 	log.Infof("Rosetta Restful init success port:%d", rconfig.Conf.Rosetta.Port)
