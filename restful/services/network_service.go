@@ -117,7 +117,7 @@ func (n NetworkAPIService) NetworkStatus(
 	currentBlockTimestamp := int64(currentblock.Header.Timestamp) * 1000
 	genesisBlock, err := actor.GetBlockByHeight(0)
 	if err != nil {
-		log.Errorf("[NetworkStatus]GetBlockByHeight failed: %s",err.Error())
+		log.Errorf("[NetworkStatus]GetBlockByHeight failed: %s", err.Error())
 		return nil, GET_BLOCK_FAILED
 	}
 	gbHash := genesisBlock.Hash()
