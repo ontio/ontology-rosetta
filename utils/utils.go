@@ -23,10 +23,10 @@ import (
 	"strings"
 
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
+	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
@@ -68,13 +68,13 @@ func InitCurrencies() error {
 	for _, scriptHash := range config.Conf.MonitorOEP4ScriptHash {
 		symbol, err := GetSymbol(scriptHash)
 		if err != nil {
-			log.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
+			log.RosetaaLog.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 			continue
 			//return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 		}
 		decimal, err := GetDecimals(scriptHash)
 		if err != nil {
-			log.Debugf("get Decimals from contract:%s ,failed:%s", scriptHash, err)
+			log.RosetaaLog.Debugf("get Decimals from contract:%s ,failed:%s", scriptHash, err)
 			continue
 		}
 		metdata := GetMetatdata(scriptHash)

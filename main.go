@@ -32,6 +32,7 @@ import (
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology-eventbus/actor"
 	alog "github.com/ontio/ontology-eventbus/log"
+	common2 "github.com/ontio/ontology-rosetta/common"
 	cfg "github.com/ontio/ontology-rosetta/config"
 	rcfg "github.com/ontio/ontology-rosetta/config"
 	rconfig "github.com/ontio/ontology-rosetta/config"
@@ -231,6 +232,7 @@ func initLog(ctx *cli.Context) {
 	} else {
 		alog.InitLog(log.PATH)
 		log.InitLog(logLevel, log.PATH, log.Stdout)
+		common2.InitLog(logLevel, log.PATH+"Rosetta/", log.Stdout)
 	}
 }
 

@@ -24,10 +24,10 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/asserter"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/restful/services"
 	db "github.com/ontio/ontology-rosetta/store"
 	"github.com/ontio/ontology/common/config"
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/p2pserver"
 )
 
@@ -88,7 +88,7 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 	// requests.
 	asserter, err := asserter.NewServer([]*types.NetworkIdentifier{network})
 	if err != nil {
-		log.Fatal(err)
+		common.RosetaaLog.Fatal(err)
 		return err
 	}
 	router := NewBlockchainRouter(network, asserter, p2pSvr, store)

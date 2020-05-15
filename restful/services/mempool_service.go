@@ -24,10 +24,10 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology-rosetta/utils"
 	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	bactor "github.com/ontio/ontology/http/base/actor"
 )
@@ -61,27 +61,27 @@ func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.M
 ) (*types.MempoolTransactionResponse, *types.Error) {
 	hash, err := common.Uint256FromHexString(req.TransactionIdentifier.Hash)
 	if err != nil {
-		log.Errorf("MempoolTransaction: parse req hash %s, %s", req.TransactionIdentifier.Hash, err)
+		log.RosetaaLog.Errorf("MempoolTransaction: parse req hash %s, %s", req.TransactionIdentifier.Hash, err)
 		return nil, TXHASH_INVALID
 	}
 	tx, err := bactor.GetTxFromPool(hash)
 	if err != nil {
-		log.Errorf("MempoolTransaction: %s", err)
+		log.RosetaaLog.Errorf("MempoolTransaction: %s", err)
 		return nil, TX_NOT_EXIST_IN_MEM
 	}
 	invokeCode, ok := tx.Tx.Payload.(*payload.InvokeCode)
 	if !ok {
-		log.Errorf("MempoolTransaction: invalid tx payload")
+		log.RosetaaLog.Errorf("MempoolTransaction: invalid tx payload")
 		return nil, INVALID_PAYLOAD
 	}
 	transferState, contract, err := utils.ParsePayload(invokeCode.Code)
 	if err != nil {
-		log.Errorf("MempoolTransaction: %s", err)
+		log.RosetaaLog.Errorf("MempoolTransaction: %s", err)
 		return nil, INVALID_PAYLOAD
 	}
 	currency, ok := utils.Currencies[strings.ToLower(contract.ToHexString())]
 	if !ok {
-		log.Errorf("MempoolTransaction: tx currency %s not exist", contract.ToHexString())
+		log.RosetaaLog.Errorf("MempoolTransaction: tx currency %s not exist", contract.ToHexString())
 		return nil, CURRENCY_NOT_CONFIG
 	}
 	rosettaTx := &types.Transaction{
