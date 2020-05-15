@@ -87,5 +87,8 @@ func InitConfig(ctx *cli.Context) error {
 	if Conf.Rosetta == nil || Conf.Rosetta.Port > 65535 || Conf.Rosetta.Port <= 0 {
 		return fmt.Errorf("rosetta-config is invalid")
 	}
+	if Conf.Rosetta.BlockWaitTime == 0 {
+		Conf.Rosetta.BlockWaitTime = 1
+	}
 	return nil
 }
