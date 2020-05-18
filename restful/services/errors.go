@@ -58,7 +58,7 @@ var (
 
 	SIGNED_TX_INVALID = &types.Error{
 		Code:      406,
-		Message:   "transaction hash is invalid",
+		Message:   "signed transaction failed",
 		Retriable: false,
 	}
 
@@ -69,7 +69,7 @@ var (
 	}
 	TXHASH_INVALID = &types.Error{
 		Code:      408,
-		Message:   "tx hash is invalid",
+		Message:   "transaction hash is invalid",
 		Retriable: false,
 	}
 	UNKNOWN_BLOCK = &types.Error{
@@ -84,7 +84,7 @@ var (
 	}
 	ADDRESS_INVALID = &types.Error{
 		Code:      501,
-		Message:   "addr is invalid",
+		Message:   "address is invalid",
 		Retriable: true,
 	}
 	BALANCE_ERROR = &types.Error{
@@ -94,7 +94,7 @@ var (
 	}
 	PARSE_INT_ERROR = &types.Error{
 		Code:      503,
-		Message:   "parse int error",
+		Message:   "parse integer error",
 		Retriable: true,
 	}
 	JSON_MARSHAL_ERROR = &types.Error{
@@ -119,12 +119,12 @@ var (
 	}
 	CONTRACT_ADDRESS_ERROR = &types.Error{
 		Code:      508,
-		Message:   "contract addr invalid",
+		Message:   "contract address invalid",
 		Retriable: true,
 	}
 	PRE_EXECUTE_ERROR = &types.Error{
 		Code:      509,
-		Message:   "preExecute contract failed",
+		Message:   "pre execute contract failed",
 		Retriable: false,
 	}
 	QUERY_BALANCE_ERROR = &types.Error{
