@@ -1,5 +1,5 @@
 # ontology-rosetta
-Ontology node which follows Rosetta Blockchain Standard
+Ontology node which follows Rosetta BlockChain Standard
 
 
 ## Build docker image
@@ -24,7 +24,8 @@ The default configuration file is rosetta-config.json
 {
   "rosetta":{
     "version": "1.3.1",
-    "port": 8080
+    "port": 8080,
+    "block_wait_time": 1
   },
 
   "monitorOEP4ScriptHash": []
@@ -33,8 +34,9 @@ The default configuration file is rosetta-config.json
 ```
 
 * rosetta 
-  * version : rosetta sdk verison
+  * version : rosetta sdk version
   * port: rosetta restful api port
+  * block_wait_time : rosetta compute historical balance block wait time
 * monitorOEP4ScriptHash:
   * OEP4 token codehash to monitor, you can find them on <https://explorer.ont.io/token/list/oep4/10/1>
 
