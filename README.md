@@ -5,13 +5,19 @@ Ontology node which follows Rosetta BlockChain Standard
 ## Build docker image
 
 ```sh
+make clean
 make docker
 ```
 
 ## Running docker image
 
+There are two volumens to mount into the ontology-rosetta container, one is for saving blocks, the other is for config file.
+
 ```sh
-docker run --name ont-rosetta -d -v /opt/data/Chain:/data/Chain -v /opt/data/rosetta-config.json:/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
+# please make sure you have enough disk space for Chain dir
+mkdir Chain
+# you are using the default config in this repo
+docker run --name ont-rosetta -d -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 ## How to use
 
