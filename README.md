@@ -5,14 +5,13 @@ Ontology node which follows Rosetta BlockChain Standard
 ## Build docker image
 
 ```sh
-make
-docker build -t ontology-rosetta:0.1 .
+make docker
 ```
 
 ## Running docker image
 
 ```sh
-docker run --name ont-rosetta -d -v /opt/data/Chain:/data/Chain -v /opt/data/rosetta-config.json:/data/rosetta-config.json -p 9090:8080 ontology-rosetta:0.1
+docker run --name ont-rosetta -d -v /opt/data/Chain:/data/Chain -v /opt/data/rosetta-config.json:/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 ## How to use
 
