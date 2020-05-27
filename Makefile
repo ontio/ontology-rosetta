@@ -2,6 +2,9 @@ GOFMT=gofmt
 GC=go build
 VERSION := $(shell git describe --always --tags --long)
 BUILD_NODE_PAR = -ldflags "-X github.com/ontio/ontology/common/config.Version=$(VERSION)" #-race
+DOCKER_IMAGE_NAME="ontology-rosetta"
+DOCKER_VERSION="latest"
+PWD := $(shell pwd)
 
 ARCH=$(shell uname -m)
 SRC_FILES = $(shell git ls-files | grep -e .go$ | grep -v _test.go)
@@ -21,6 +24,10 @@ rosetta-node-darwin:
 	GOOS=darwin GOARCH=amd64 $(GC) $(BUILD_NODE_PAR) -o rosetta-node-darwin-amd64 main.go
 
 all-cross: rosetta-node-cross
+
+docker:
+	docker run -v $(PWD):/go/src/github.com/ontio/ontology-rosetta  golang:1.13 bash -c 'cd /go/src/github.com/ontio/ontology-rosetta && make -f Makefile'
+	docker build -t $(DOCKER_IMAGE_NAME):$(DOCKER_VERSION) .
 
 format:
 	$(GOFMT) -w main.go
