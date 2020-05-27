@@ -26,7 +26,6 @@ rosetta-node-darwin:
 all-cross: rosetta-node-cross
 
 docker:
-	docker run -v $(PWD):/go/src/github.com/ontio/ontology-rosetta  golang:1.13 bash -c 'cd /go/src/github.com/ontio/ontology-rosetta && make -f Makefile'
 	docker build -t $(DOCKER_IMAGE_NAME):$(DOCKER_VERSION) .
 
 format:
