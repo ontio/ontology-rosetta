@@ -5,7 +5,6 @@ Ontology node which follows Rosetta BlockChain Standard
 ## Build docker image
 
 ```sh
-make clean
 make docker
 ```
 
@@ -43,7 +42,7 @@ The default configuration file is rosetta-config.json
 }
 ```
 
-* rosetta 
+* rosetta
   * version : rosetta sdk version
   * port: rosetta restful api port
   * block_wait_time : rosetta compute historical balance block wait time
@@ -98,7 +97,7 @@ Use the available "network_identifier" from /network/list
             "blockchain": "ont",
             "network": "mainnet"
         }
-    
+
 }
 ```
 
@@ -253,7 +252,7 @@ Use the available "network_identifier" from /network/list
             "blockchain": "ont",
             "network": "mainnet"
         }
-    
+
 }
 ```
 
@@ -406,8 +405,8 @@ Request:
         },
     "block_identifier": {
         "index":54
-    }    
-    
+    }
+
 }
 ```
 
@@ -508,7 +507,7 @@ Request:
     "transaction_identifier": {
         "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
     }
-    
+
 }
 ```
 
@@ -696,7 +695,7 @@ Request:
     "transaction_identifier": {
         "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
     }
-    
+
 }
 ```
 
