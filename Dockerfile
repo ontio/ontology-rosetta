@@ -6,7 +6,7 @@ RUN git clone https://github.com/ontio/ontology-rosetta && \
   make rosetta-node
 
 # Copy node binary from build
-FROM golang:1.13
+FROM ubuntu:18.04
 WORKDIR /app
 COPY --from=build /app/ontology-rosetta/rosetta-node rosetta-node
 COPY --from=build /app/ontology-rosetta/start.sh start.sh
