@@ -298,7 +298,7 @@ func GetBlockHeight(store *db.Store, waitTime uint32) error {
 						}
 						continue
 					} else {
-						log.RosetaaLog.Errorf("GetEventNotifyByHeight height:%d,err:%s", i, err.Error())
+						log.RosettaLog.Errorf("GetEventNotifyByHeight height:%d,err:%s", i, err.Error())
 						notifyKillProcess()
 						return
 					}
@@ -318,7 +318,7 @@ func GetBlockHeight(store *db.Store, waitTime uint32) error {
 				}
 				err = dealTransferData(store, transfers, i)
 				if err != nil {
-					log.RosetaaLog.Errorf("dealTransferData height:%d,erp:%s", i, err)
+					log.RosettaLog.Errorf("dealTransferData height:%d,erp:%s", i, err)
 					notifyKillProcess()
 					return
 				}
@@ -332,10 +332,10 @@ func GetBlockHeight(store *db.Store, waitTime uint32) error {
 }
 
 func notifyKillProcess() {
-	log.RosetaaLog.Info("notify kill rosetta process")
+	log.RosettaLog.Info("notify kill rosetta process")
 	err := syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	if err != nil {
-		log.RosetaaLog.Fatalf("notifyKillProcess ,err:%s", err)
+		log.RosettaLog.Fatalf("notifyKillProcess ,err:%s", err)
 		panic(err)
 	}
 }
@@ -387,7 +387,7 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 			} else {
 				method, err := common.HexToBytes(slice.Index(0).Interface().(string))
 				if err != nil {
-					log.RosetaaLog.Errorf("method HexToBytes height:%d err:%s", height, err)
+					log.RosettaLog.Errorf("method HexToBytes height:%d err:%s", height, err)
 					return nil, err
 				}
 				if !strings.EqualFold(string(method), config.OP_TYPE_TRANSFER) {
@@ -397,12 +397,12 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				if tmpAddr != util.OPE4_ADDR_BASE {
 					addFromTmp, err := common.HexToBytes(slice.Index(1).Interface().(string))
 					if err != nil {
-						log.RosetaaLog.Errorf("addFromTmp HexToBytes height:%d, err:%s", height, err)
+						log.RosettaLog.Errorf("addFromTmp HexToBytes height:%d, err:%s", height, err)
 						return nil, err
 					}
 					addFrom, err := common.AddressParseFromBytes(addFromTmp)
 					if err != nil {
-						log.RosetaaLog.Errorf("addFrom addrFrom parse addr height:%d,failed:%s", height, err)
+						log.RosettaLog.Errorf("addFrom addrFrom parse addr height:%d,failed:%s", height, err)
 						return nil, err
 					}
 					transfer.fromAddr = addFrom.ToBase58()
@@ -411,18 +411,18 @@ func parseEventNotify(execNotify []*event.ExecuteNotify, height uint32) ([]*tran
 				}
 				addrToTmp, err := common.HexToBytes(slice.Index(2).Interface().(string))
 				if err != nil {
-					log.RosetaaLog.Errorf("addrToTmp HexToBytes height:%d,err:%s", height, err)
+					log.RosettaLog.Errorf("addrToTmp HexToBytes height:%d,err:%s", height, err)
 					return nil, err
 				}
 				addrTo, err := common.AddressParseFromBytes(addrToTmp)
 				if err != nil {
-					log.RosetaaLog.Errorf("addrTo parse addr height:%d, failed:%s", height, err)
+					log.RosettaLog.Errorf("addrTo parse addr height:%d, failed:%s", height, err)
 					return nil, err
 				}
 				transfer.toAddr = addrTo.ToBase58()
 				tmp, err := common.HexToBytes(slice.Index(3).Interface().(string))
 				if err != nil {
-					log.RosetaaLog.Errorf("tmp HexToBytes height:%d,err:%s", height, err)
+					log.RosettaLog.Errorf("tmp HexToBytes height:%d,err:%s", height, err)
 					return nil, err
 				}
 				amt := common.BigIntFromNeoBytes(tmp)
@@ -577,12 +577,12 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 		pageNum, err := store.GetData([]byte(k))
 		if err != nil {
 			if err != leveldb.ErrNotFound {
-				log.RosetaaLog.Errorf("getPageNum height:%d,k:%s,err:%s", height, k, err)
+				log.RosettaLog.Errorf("getPageNum height:%d,k:%s,err:%s", height, k, err)
 				return err
 			} else {
 				balances := make([]*Balance, 0)
 				if v.addAmount < v.subAmount {
-					log.RosetaaLog.Errorf("amount height:%d calcul err,addAmount:%d,subAmount:%d k:%s", height, v.addAmount, v.subAmount, k)
+					log.RosettaLog.Errorf("amount height:%d calcul err,addAmount:%d,subAmount:%d k:%s", height, v.addAmount, v.subAmount, k)
 					return fmt.Errorf("amount calcul err,addAmount:%d,subAmount:%d", v.addAmount, v.subAmount)
 				}
 				balance := &Balance{
@@ -598,7 +598,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 		} else {
 			buf, err := store.GetData([]byte(getAddrKey(k, string(pageNum))))
 			if err != nil {
-				log.RosetaaLog.Errorf("GetData height:%d,err:%s", height, err)
+				log.RosettaLog.Errorf("GetData height:%d,err:%s", height, err)
 				return err
 			}
 			b := &Balances{
@@ -606,7 +606,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 			}
 			err = b.Deserialization(buf)
 			if err != nil {
-				log.RosetaaLog.Errorf("Deserialization height:%d,err:%s", height, err)
+				log.RosettaLog.Errorf("Deserialization height:%d,err:%s", height, err)
 				return err
 			}
 			sort.SliceStable(b.Value, func(i, j int) bool {
@@ -616,7 +616,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				return true
 			})
 			if b.Value[len(b.Value)-1].Amount+v.addAmount < v.subAmount {
-				log.RosetaaLog.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, b.Value[len(b.Value)-1].Amount, v.addAmount, v.subAmount, height)
+				log.RosettaLog.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, b.Value[len(b.Value)-1].Amount, v.addAmount, v.subAmount, height)
 				return fmt.Errorf("amount error")
 			}
 			var params []*Balance
@@ -686,7 +686,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 			}
 			b, err := GetAccBalancesByPageNum(store, balance.Key, pageNum)
 			if err != nil {
-				log.RosetaaLog.Errorf("GetAccBalancesByPageNum height:%d,err:%s", height, err)
+				log.RosettaLog.Errorf("GetAccBalancesByPageNum height:%d,err:%s", height, err)
 				return err
 			}
 			if (len(b.Value)+len(balance.Value))/util.EACH_PAGE_SVAE_BALANCE_NUM > 0 {
@@ -735,7 +735,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 	store.BatchPut(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	err := store.CommitTo()
 	if err != nil {
-		log.RosetaaLog.Errorf("batchSaveBalance err:%s,height:%d", err, height)
+		log.RosettaLog.Errorf("batchSaveBalance err:%s,height:%d", err, height)
 		return err
 	}
 	return nil
@@ -788,7 +788,7 @@ func getHeightFromStore(store *db.Store) (uint32, error) {
 func saveBlockHeight(store *db.Store, height uint32) error {
 	err := store.SaveData(getBlockHeightKey(), []byte(strconv.FormatUint(uint64(height), 10)))
 	if err != nil {
-		log.RosetaaLog.Error("SaveData err:%s,height:%d", err, height)
+		log.RosettaLog.Error("SaveData err:%s,height:%d", err, height)
 		return err
 	}
 	return nil

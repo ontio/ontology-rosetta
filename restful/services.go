@@ -88,7 +88,7 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 	// requests.
 	asserter, err := asserter.NewServer([]*types.NetworkIdentifier{network})
 	if err != nil {
-		common.RosetaaLog.Fatal(err)
+		common.RosettaLog.Fatal(err)
 		return err
 	}
 	router := NewBlockchainRouter(network, asserter, p2pSvr, store)
