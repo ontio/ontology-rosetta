@@ -59,7 +59,7 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	metadata["current_block_height"] = height
 	historyHeight, err := getHeightFromStore(c.store)
 	if err != nil {
-		log.RosetaaLog.Errorf("getHeightFromStore err:%s", err)
+		log.RosettaLog.Errorf("getHeightFromStore err:%s", err)
 	} else {
 		metadata["calcul_history_block_height"] = historyHeight
 	}
@@ -81,16 +81,16 @@ func (c ConstructionAPIService) ConstructionSubmit(
 
 	txbytes, err := common.HexToBytes(txStr)
 	if err != nil {
-		log.RosetaaLog.Errorf("[ConstructionSubmit]HexToBytes failed:%s", err.Error())
+		log.RosettaLog.Errorf("[ConstructionSubmit]HexToBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	txn, err := ctypes.TransactionFromRawBytes(txbytes)
 	if err != nil {
-		log.RosetaaLog.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s", err.Error())
+		log.RosettaLog.Errorf("[ConstructionSubmit]TransactionFromRawBytes failed:%s", err.Error())
 		return nil, SIGNED_TX_INVALID
 	}
 	if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
-		log.RosetaaLog.Errorf("[ConstructionSubmit]SendTxToPool failed:%s", desc)
+		log.RosettaLog.Errorf("[ConstructionSubmit]SendTxToPool failed:%s", desc)
 		return nil, COMMIT_TX_FAILED
 	}
 

@@ -85,7 +85,7 @@ func GetGID() uint64 {
 	return n
 }
 
-var RosetaaLog *Logger
+var RosettaLog *Logger
 
 func init() {
 	//Default print to console
@@ -208,7 +208,7 @@ func (l *Logger) Fatalf(format string, a ...interface{}) {
 }
 
 func Trace(a ...interface{}) {
-	if TraceLog < RosetaaLog.level {
+	if TraceLog < RosettaLog.level {
 		return
 	}
 
@@ -224,11 +224,11 @@ func Trace(a ...interface{}) {
 
 	a = append([]interface{}{funcName + "()", fileName + ":" + strconv.Itoa(line)}, a...)
 
-	RosetaaLog.Trace(a...)
+	RosettaLog.Trace(a...)
 }
 
 func Tracef(format string, a ...interface{}) {
-	if TraceLog < RosetaaLog.level {
+	if TraceLog < RosettaLog.level {
 		return
 	}
 
@@ -244,11 +244,11 @@ func Tracef(format string, a ...interface{}) {
 
 	a = append([]interface{}{funcName, fileName, line}, a...)
 
-	RosetaaLog.Tracef("%s() %s:%d "+format, a...)
+	RosettaLog.Tracef("%s() %s:%d "+format, a...)
 }
 
 func Debug(a ...interface{}) {
-	if DebugLog < RosetaaLog.level {
+	if DebugLog < RosettaLog.level {
 		return
 	}
 
@@ -260,11 +260,11 @@ func Debug(a ...interface{}) {
 
 	a = append([]interface{}{f.Name(), fileName + ":" + strconv.Itoa(line)}, a...)
 
-	RosetaaLog.Debug(a...)
+	RosettaLog.Debug(a...)
 }
 
 func Debugf(format string, a ...interface{}) {
-	if DebugLog < RosetaaLog.level {
+	if DebugLog < RosettaLog.level {
 		return
 	}
 
@@ -276,39 +276,39 @@ func Debugf(format string, a ...interface{}) {
 
 	a = append([]interface{}{f.Name(), fileName, line}, a...)
 
-	RosetaaLog.Debugf("%s %s:%d "+format, a...)
+	RosettaLog.Debugf("%s %s:%d "+format, a...)
 }
 
 func Info(a ...interface{}) {
-	RosetaaLog.Info(a...)
+	RosettaLog.Info(a...)
 }
 
 func Warn(a ...interface{}) {
-	RosetaaLog.Warn(a...)
+	RosettaLog.Warn(a...)
 }
 
 func Error(a ...interface{}) {
-	RosetaaLog.Error(a...)
+	RosettaLog.Error(a...)
 }
 
 func Fatal(a ...interface{}) {
-	RosetaaLog.Fatal(a...)
+	RosettaLog.Fatal(a...)
 }
 
 func Infof(format string, a ...interface{}) {
-	RosetaaLog.Infof(format, a...)
+	RosettaLog.Infof(format, a...)
 }
 
 func Warnf(format string, a ...interface{}) {
-	RosetaaLog.Warnf(format, a...)
+	RosettaLog.Warnf(format, a...)
 }
 
 func Errorf(format string, a ...interface{}) {
-	RosetaaLog.Errorf(format, a...)
+	RosettaLog.Errorf(format, a...)
 }
 
 func Fatalf(format string, a ...interface{}) {
-	RosetaaLog.Fatalf(format, a...)
+	RosettaLog.Fatalf(format, a...)
 }
 
 // used for develop stage and not allowed in production enforced by CI
@@ -368,11 +368,11 @@ func InitLog(logLevel int, a ...interface{}) {
 		}
 	}
 	fileAndStdoutWrite := io.MultiWriter(writers...)
-	RosetaaLog = New(fileAndStdoutWrite, "", log.LUTC|log.Ldate|log.Lmicroseconds, logLevel, logFile)
+	RosettaLog = New(fileAndStdoutWrite, "", log.LUTC|log.Ldate|log.Lmicroseconds, logLevel, logFile)
 }
 
 func GetLogFileSize() (int64, error) {
-	f, e := RosetaaLog.logFile.Stat()
+	f, e := RosettaLog.logFile.Stat()
 	if e != nil {
 		return 0, e
 	}
@@ -402,8 +402,8 @@ func CheckIfNeedNewFile() bool {
 
 func ClosePrintLog() error {
 	var err error
-	if RosetaaLog.logFile != nil {
-		err = RosetaaLog.logFile.Close()
+	if RosettaLog.logFile != nil {
+		err = RosettaLog.logFile.Close()
 	}
 	return err
 }

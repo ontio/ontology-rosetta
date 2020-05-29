@@ -68,13 +68,13 @@ func InitCurrencies() error {
 	for _, scriptHash := range config.Conf.MonitorOEP4ScriptHash {
 		symbol, err := GetSymbol(scriptHash)
 		if err != nil {
-			log.RosetaaLog.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
+			log.RosettaLog.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 			continue
 			//return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 		}
 		decimal, err := GetDecimals(scriptHash)
 		if err != nil {
-			log.RosetaaLog.Debugf("get Decimals from contract:%s ,failed:%s", scriptHash, err)
+			log.RosettaLog.Debugf("get Decimals from contract:%s ,failed:%s", scriptHash, err)
 			continue
 		}
 		metdata := GetMetatdata(scriptHash)
