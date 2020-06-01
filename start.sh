@@ -2,4 +2,4 @@
 
 id=${NETWORK_ID:-1}
 
-/app/rosetta-node --disable-log-file --data-dir /data/Chain --rosetta-config /data/rosetta-config.json --networkid $id
+/app/rosetta-node --log-dir /data/Log --data-dir /data/Chain --rosetta-config /data/rosetta-config.json --networkid $id

@@ -16,11 +16,11 @@ There are two volumens to mount into the ontology-rosetta container, one is for 
 # please make sure you have enough disk space for Chain dir
 mkdir Chain
 # you are using the default config in this repo
-docker run --name ont-rosetta -d -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
+docker run --name ont-rosetta -d -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 If you want to connect to testnet, set env NETWORK\_ID value to 2.
 ```sh
-docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
+docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 
 ## How to use

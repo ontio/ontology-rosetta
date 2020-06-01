@@ -1,7 +1,7 @@
 # Build rosetta-node
 FROM golang:1.13 AS build
 WORKDIR /app
-RUN git clone https://github.com/ontio/ontology-rosetta && \
+RUN git clone -b v1.10.0 https://github.com/ontio/ontology-rosetta  && \
   cd ontology-rosetta && \
   make rosetta-node
 
