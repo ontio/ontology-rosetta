@@ -19,8 +19,6 @@ package services
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
@@ -128,13 +126,16 @@ func (n NetworkAPIService) NetworkStatus(
 
 	peers := make([]*types.Peer, 0)
 	if n.p2pSvr != nil {
-		for _, peer := range n.p2pSvr.GetNetWork().GetNeighbors() {
+		for _, peer := range n.p2pSvr.GetNetwork().GetNeighbors() {
 			metadata := make(map[string]interface{})
 			metadata["address"] = peer.GetAddr()
 			metadata["height"] = peer.GetHeight()
-			metadata["state"] = peer.GetState()
+			//ontology v1.10 removed this property
+			//metadata["state"] = peer.GetState()\
+			//peerId changed to peer address
+			pid := peer.GetID()
 			p := &types.Peer{
-				PeerID:   fmt.Sprintf("%d", peer.GetID()),
+				PeerID:   pid.ToHexString(),
 				Metadata: metadata,
 			}
 			peers = append(peers, p)
