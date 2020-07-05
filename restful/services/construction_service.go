@@ -24,11 +24,11 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
 	db "github.com/ontio/ontology-rosetta/store"
-	"github.com/ontio/ontology/common"
-	ctypes "github.com/ontio/ontology/core/types"
-	ontErrors "github.com/ontio/ontology/errors"
-	"github.com/ontio/ontology/http/base/actor"
-	bcomn "github.com/ontio/ontology/http/base/common"
+	"github.com/ontio/ontology/v2/common"
+	ctypes "github.com/ontio/ontology/v2/core/types"
+	ontErrors "github.com/ontio/ontology/v2/errors"
+	"github.com/ontio/ontology/v2/http/base/actor"
+	bcomn "github.com/ontio/ontology/v2/http/base/common"
 )
 
 type ConstructionAPIService struct {

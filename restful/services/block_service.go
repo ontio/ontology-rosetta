@@ -25,9 +25,9 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/utils"
-	"github.com/ontio/ontology/common"
-	ctypes "github.com/ontio/ontology/core/types"
-	"github.com/ontio/ontology/http/base/actor"
+	"github.com/ontio/ontology/v2/common"
+	ctypes "github.com/ontio/ontology/v2/core/types"
+	"github.com/ontio/ontology/v2/http/base/actor"
 )
 
 // BlockAPIService implements the server.BlockAPIServicer interface.

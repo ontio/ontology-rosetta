@@ -27,9 +27,9 @@ import (
 	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
 	"github.com/ontio/ontology-rosetta/utils"
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/core/payload"
-	bactor "github.com/ontio/ontology/http/base/actor"
+	"github.com/ontio/ontology/v2/common"
+	"github.com/ontio/ontology/v2/core/payload"
+	bactor "github.com/ontio/ontology/v2/http/base/actor"
 )
 
 type MemPoolService struct {

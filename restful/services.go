@@ -27,8 +27,8 @@ import (
 	"github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/restful/services"
 	db "github.com/ontio/ontology-rosetta/store"
-	"github.com/ontio/ontology/common/config"
-	"github.com/ontio/ontology/p2pserver"
+	"github.com/ontio/ontology/v2/common/config"
+	"github.com/ontio/ontology/v2/p2pserver"
 )
 
 // NewBlockchainRouter creates a Mux http.Handler from a collection

@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
-	"github.com/ontio/ontology/cmd/utils"
+	"github.com/ontio/ontology/v2/cmd/utils"
 	"github.com/urfave/cli"
 )
 

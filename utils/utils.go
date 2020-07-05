@@ -25,12 +25,12 @@ import (
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/constants"
-	"github.com/ontio/ontology/core/ledger"
-	"github.com/ontio/ontology/core/types"
-	"github.com/ontio/ontology/http/base/actor"
-	bcomn "github.com/ontio/ontology/http/base/common"
+	"github.com/ontio/ontology/v2/common"
+	"github.com/ontio/ontology/v2/common/constants"
+	"github.com/ontio/ontology/v2/core/ledger"
+	"github.com/ontio/ontology/v2/core/types"
+	"github.com/ontio/ontology/v2/http/base/actor"
+	bcomn "github.com/ontio/ontology/v2/http/base/common"
 )
 
 var (

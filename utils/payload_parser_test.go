@@ -21,8 +21,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/core/utils"
+	"github.com/ontio/ontology/v2/common"
+	"github.com/ontio/ontology/v2/core/utils"
 )
 
 func TestParsePayload(t *testing.T) {

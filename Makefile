@@ -1,7 +1,7 @@
 GOFMT=gofmt
 GC=go build
 VERSION := $(shell git describe --always --tags --long)
-BUILD_NODE_PAR = -ldflags "-X github.com/ontio/ontology/common/config.Version=$(VERSION)" #-race
+BUILD_NODE_PAR = -ldflags "-X github.com/ontio/ontology/v2/common/config.Version=$(VERSION)" #-race
 DOCKER_IMAGE_NAME="ontology-rosetta"
 DOCKER_VERSION="latest"
 PWD := $(shell pwd)

@@ -23,8 +23,8 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
-	"github.com/ontio/ontology/http/base/actor"
-	"github.com/ontio/ontology/p2pserver"
+	"github.com/ontio/ontology/v2/http/base/actor"
+	"github.com/ontio/ontology/v2/p2pserver"
 )
 
 type NetworkAPIService struct {
