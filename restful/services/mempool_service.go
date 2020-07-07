@@ -43,7 +43,7 @@ func NewMemPoolService(network *types.NetworkIdentifier) server.MempoolAPIServic
 	}
 }
 
-func (this *MemPoolService) Mempool(ctx context.Context, req *types.MempoolRequest) (*types.MempoolResponse,
+func (this *MemPoolService) Mempool(ctx context.Context, req *types.NetworkRequest) (*types.MempoolResponse,
 	*types.Error) {
 	txMap := bactor.GetTxsFromPool(false)
 	resp := &types.MempoolResponse{
