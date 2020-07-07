@@ -36,6 +36,48 @@ type ConstructionAPIService struct {
 	store   *db.Store
 }
 
+func (c ConstructionAPIService) ConstructionCombine(
+	context.Context,
+	*types.ConstructionCombineRequest,
+) (*types.ConstructionCombineResponse, *types.Error) {
+	panic("implement me")
+}
+
+func (c ConstructionAPIService) ConstructionDerive(
+	context.Context,
+	*types.ConstructionDeriveRequest,
+) (*types.ConstructionDeriveResponse, *types.Error) {
+	panic("implement me")
+}
+
+func (c ConstructionAPIService) ConstructionHash(
+	context.Context,
+	*types.ConstructionHashRequest,
+) (*types.ConstructionHashResponse, *types.Error) {
+	panic("implement me")
+}
+
+func (c ConstructionAPIService) ConstructionParse(
+	context.Context,
+	*types.ConstructionParseRequest,
+) (*types.ConstructionParseResponse, *types.Error) {
+	panic("implement me")
+}
+
+func (c ConstructionAPIService) ConstructionPayloads(
+	context.Context,
+	*types.ConstructionPayloadsRequest,
+) (*types.ConstructionPayloadsResponse, *types.Error) {
+	panic("implement me")
+}
+
+func (c ConstructionAPIService) ConstructionPreprocess(
+	context.Context,
+	*types.ConstructionPreprocessRequest,
+) (*types.ConstructionPreprocessResponse, *types.Error) {
+	panic("implement me")
+}
+
 func NewConstructionAPIService(network *types.NetworkIdentifier, store *db.Store) server.ConstructionAPIServicer {
 	return &ConstructionAPIService{network: network, store: store}
 }
