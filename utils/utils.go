@@ -20,6 +20,7 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ontio/ontology-crypto/keypair"
 	"strings"
 
 	rtypes "github.com/coinbase/rosetta-sdk-go/types"
@@ -423,4 +424,17 @@ func PreExecNeovmContract(contractAddress string, method string, params []interf
 
 func IsMonitoredAddress(contractAddress string) bool {
 	return IsONT(contractAddress) || IsONG(contractAddress) || IsOEP4(contractAddress)
+}
+
+func TransformPubkey(pk *rtypes.PublicKey) (keypair.PublicKey, error) {
+	pkbts, err := hex.DecodeString(pk.HexBytes)
+	if err != nil {
+		return nil, err
+	}
+	pubkey, err := keypair.DeserializePublicKey(pkbts)
+	if err != nil {
+		return nil, err
+	}
+	//todo do we need to check the curve type?
+	return pubkey, nil
 }
