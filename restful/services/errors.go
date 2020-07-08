@@ -147,4 +147,40 @@ var (
 		Message:   "db store error",
 		Retriable: true,
 	}
+
+	PUBKEY_HEX_ERROR = &types.Error{
+		Code:      514,
+		Message:   "invalid pubkey hex bytes",
+		Retriable: true,
+	}
+
+	TRANSACTION_HEX_ERROR = &types.Error{
+		Code:      515,
+		Message:   "invalid transaction hex bytes",
+		Retriable: false,
+	}
+
+	NO_SIGS_ERROR = &types.Error{
+		Code:      516,
+		Message:   "no signatures provided",
+		Retriable: false,
+	}
+
+	EXCEED_MAX_SIGS_ERROR = &types.Error{
+		Code:      517,
+		Message:   "max signature counts (16) exceeded",
+		Retriable: false,
+	}
+
+	SIGS_FORMAT_ERROR = &types.Error{
+		Code:      518,
+		Message:   "max signature counts (16) exceeded",
+		Retriable: false,
+	}
+
+	INVALID_SIG_ERROR = &types.Error{
+		Code:      520,
+		Message:   "invalid signature",
+		Retriable: false,
+	}
 )

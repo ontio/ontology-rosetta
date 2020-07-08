@@ -19,6 +19,11 @@ package services
 
 import (
 	"context"
+	"encoding/hex"
+	"github.com/ontio/ontology-crypto/keypair"
+	"github.com/ontio/ontology-rosetta/utils"
+	"github.com/ontio/ontology/core/signature"
+	"strings"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
@@ -37,17 +42,103 @@ type ConstructionAPIService struct {
 }
 
 func (c ConstructionAPIService) ConstructionCombine(
-	context.Context,
-	*types.ConstructionCombineRequest,
+	ctx context.Context,
+	req *types.ConstructionCombineRequest,
 ) (*types.ConstructionCombineResponse, *types.Error) {
-	panic("implement me")
+
+	utbytes, err := hex.DecodeString(req.UnsignedTransaction)
+	if err != nil {
+		return nil, TRANSACTION_HEX_ERROR
+	}
+	signs := req.Signatures
+	if signs == nil || len(signs) == 0 {
+		return nil, NO_SIGS_ERROR
+	}
+
+	//todo how to solve multi-sign addr case
+	ontsigns := make([]ctypes.Sig, len(signs))
+	for i, s := range signs {
+		pk, err := utils.TransformPubkey(s.PublicKey)
+		if err != nil {
+			return nil, PUBKEY_HEX_ERROR
+		}
+		sigdata, err := hex.DecodeString(s.HexBytes)
+		if err != nil {
+			return nil, SIGS_FORMAT_ERROR
+		}
+		//verify the sigdata???
+		sigpayloaddata, err := hex.DecodeString(s.SigningPayload.HexBytes)
+		if err != nil {
+			return nil, SIGS_FORMAT_ERROR
+		}
+		err = signature.Verify(pk, sigpayloaddata, sigdata)
+		if err != nil {
+			return nil, INVALID_SIG_ERROR
+		}
+
+		sig := ctypes.Sig{
+			SigData: [][]byte{sigdata},
+			PubKeys: []keypair.PublicKey{pk},
+			M:       1,
+		}
+		ontsigns[i] = sig
+	}
+
+	tx, err := ctypes.TransactionFromRawBytes(utbytes)
+	if err != nil {
+		return nil, TRANSACTION_HEX_ERROR
+	}
+	mt, err := tx.IntoMutable()
+	if err != nil {
+		return nil, TRANSACTION_HEX_ERROR
+	}
+	mt.Sigs = ontsigns
+
+	imtx, err := mt.IntoImmutable()
+	if err != nil {
+		return nil, TRANSACTION_HEX_ERROR
+	}
+	resp := new(types.ConstructionCombineResponse)
+
+	sink := common.ZeroCopySink{}
+	imtx.Serialization(&sink)
+	resp.SignedTransaction = hex.EncodeToString(sink.Bytes())
+
+	return resp, nil
 }
 
 func (c ConstructionAPIService) ConstructionDerive(
-	context.Context,
-	*types.ConstructionDeriveRequest,
+	ctx context.Context,
+	req *types.ConstructionDeriveRequest,
 ) (*types.ConstructionDeriveResponse, *types.Error) {
-	panic("implement me")
+
+	pubkey := req.PublicKey
+	//ct := pubkey.CurveType
+	meta := req.Metadata
+
+	bts, err := hex.DecodeString(pubkey.HexBytes)
+	if err != nil {
+		return nil, PUBKEY_HEX_ERROR
+	}
+
+	pk, err := keypair.DeserializePublicKey(bts)
+	if err != nil {
+		return nil, PUBKEY_HEX_ERROR
+	}
+	addr := ctypes.AddressFromPubKey(pk)
+
+	resp := new(types.ConstructionDeriveResponse)
+
+	if meta == nil {
+		resp.Address = addr.ToBase58()
+	} else if meta["type"] == strings.ToLower("hex") {
+		resp.Address = addr.ToHexString()
+	} else {
+		resp.Address = addr.ToBase58()
+	}
+	resp.Metadata = meta
+
+	return resp, nil
 }
 
 func (c ConstructionAPIService) ConstructionHash(

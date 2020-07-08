@@ -1,5 +1,5 @@
 # ontology-rosetta
-Ontology node which follows Rosetta BlockChain Standard
+Ontology node which follows [Rosetta](https://github.com/coinbase/rosetta-specifications) BlockChain Standard
 
 
 ## Build docker image
@@ -32,7 +32,7 @@ The default configuration file is rosetta-config.json
 ```
 {
   "rosetta":{
-    "version": "1.3.1",
+    "version": "1.4.1",
     "port": 8080,
     "block_wait_time": 1
   },
@@ -47,7 +47,7 @@ The default configuration file is rosetta-config.json
   * port: rosetta restful api port
   * block_wait_time : rosetta compute historical balance block wait time
 * monitorOEP4ScriptHash:
-  * OEP4 token codehash to monitor, you can find them on <https://explorer.ont.io/token/list/oep4/10/1>
+  * OEP4 token codehash to monitor
 
 
 ## Restful API
@@ -617,6 +617,71 @@ Sample
     "metadata": {}
 }
 ```
+
+**/construction/derive**
+
+*Derive Address from Public Key*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+    "public_key":{
+        "hex_bytes":"<pubkey hex string>",
+        "curev_type":"secp256k1|edwards25519",
+        "metadata":{
+            "type":"hex|base58"
+        }
+    }
+}
+```
+
+Address type supports ```hex```  or ```base58``` format
+
+Response:
+
+Sample
+
+```json
+{
+    "address":"<address>",
+    "metadata":{
+         "type":"hex|base58"
+    }
+}
+```
+
+
+
+**/construction/preprocess**
+
+*Create Metadata Request*
+
+Request:
+
+```
+
+```
+
+
+
+Response:
+
+Sample
+
+```
+
+```
+
+
+
+
+
+
 
 
 
