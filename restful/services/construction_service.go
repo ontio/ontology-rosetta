@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package services
 
 import (
@@ -40,11 +41,18 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 )
 
+const (
+	ADDRESS_TYPE        = "type"
+	ADDRESS_TYPE_HEX    = "hex"
+	ADDRESS_TYPE_BASE58 = "base58"
+)
+
 type ConstructionAPIService struct {
 	network *types.NetworkIdentifier
 	store   *db.Store
 }
 
+// Sign Payload(s) . endpoint:/construction/combine
 func (c ConstructionAPIService) ConstructionCombine(
 	ctx context.Context,
 	req *types.ConstructionCombineRequest,
@@ -103,13 +111,13 @@ func (c ConstructionAPIService) ConstructionCombine(
 	return resp, nil
 }
 
+//  Derive Address. endpoint:/construction/derive
 func (c ConstructionAPIService) ConstructionDerive(
 	ctx context.Context,
 	req *types.ConstructionDeriveRequest,
 ) (*types.ConstructionDeriveResponse, *types.Error) {
 
 	pubkey := req.PublicKey
-	//ct := pubkey.CurveType
 	meta := req.Metadata
 	bts := pubkey.Bytes
 	pk, err := keypair.DeserializePublicKey(bts)
@@ -120,12 +128,11 @@ func (c ConstructionAPIService) ConstructionDerive(
 
 	resp := new(types.ConstructionDeriveResponse)
 	// currently we only support base58 or hex format
-	// currently we only support base58 or hex format
 	if meta == nil {
 		resp.Address = addr.ToBase58()
-	} else if meta["type"] == strings.ToLower("hex") {
+	} else if meta[ADDRESS_TYPE] == strings.ToLower(ADDRESS_TYPE_HEX) {
 		resp.Address = addr.ToHexString()
-	} else if meta["type"] == strings.ToLower("base58") {
+	} else if meta[ADDRESS_TYPE] == strings.ToLower(ADDRESS_TYPE_BASE58) {
 		resp.Address = addr.ToBase58()
 	} else {
 		return nil, INVALID_ADDRESS_TYPE_ERROR
@@ -135,6 +142,7 @@ func (c ConstructionAPIService) ConstructionDerive(
 	return resp, nil
 }
 
+// Get hash of signed transaction. endpoint:/construction/hash
 func (c ConstructionAPIService) ConstructionHash(
 	ctx context.Context,
 	request *types.ConstructionHashRequest,
@@ -148,11 +156,12 @@ func (c ConstructionAPIService) ConstructionHash(
 	if err != nil {
 		return resp, PARAMS_ERROR
 	}
-	var hash = txn.Hash()
+	hash := txn.Hash()
 	resp.TransactionHash = hash.ToHexString()
 	return resp, nil
 }
 
+// Parse Unsigned Transaction. endpoint:/construction/parse
 func (c ConstructionAPIService) ConstructionParse(
 	ctx context.Context,
 	request *types.ConstructionParseRequest,
@@ -229,6 +238,7 @@ func (c ConstructionAPIService) ConstructionParse(
 	return resp, nil
 }
 
+//Construct Payloads to Sign. endpoint:/construction/payloads
 func (c ConstructionAPIService) ConstructionPayloads(
 	ctx context.Context,
 	request *types.ConstructionPayloadsRequest,
@@ -305,6 +315,7 @@ func (c ConstructionAPIService) ConstructionPayloads(
 	return resp, nil
 }
 
+//Create Metadata Request. endpoint:/construction/preprocess
 func (c ConstructionAPIService) ConstructionPreprocess(
 	ctx context.Context,
 	request *types.ConstructionPreprocessRequest,
