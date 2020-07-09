@@ -251,10 +251,7 @@ func getHistoryBalance(store *db.Store, height uint32, addr, contract string) (u
 			continue
 		}
 		sort.SliceStable(b.Value, func(i, j int) bool {
-			if b.Value[i].Height >= b.Value[j].Height {
-				return false
-			}
-			return true
+			return b.Value[i].Height < b.Value[j].Height
 		})
 		for i := len(b.Value) - 1; i >= 0; i-- {
 			if height >= b.Value[i].Height {
@@ -532,9 +529,10 @@ type BalanceInfo struct {
 func getAddrKey(addr, contractAddr string) string {
 	return addr + ":" + contractAddr
 }
-func getAccountKey(addr, contractAddr, pageNum string) string {
-	return addr + ":" + contractAddr + ":" + pageNum
-}
+
+//func getAccountKey(addr, contractAddr, pageNum string) string {
+//	return addr + ":" + contractAddr + ":" + pageNum
+//}
 
 func getAccKey(key, pageNum string) string {
 	return key + ":" + pageNum
@@ -610,10 +608,7 @@ func dealTransferData(store *db.Store, transfers []*transferInfo, height uint32)
 				return err
 			}
 			sort.SliceStable(b.Value, func(i, j int) bool {
-				if b.Value[i].Height >= b.Value[j].Height {
-					return false
-				}
-				return true
+				return b.Value[i].Height < b.Value[j].Height
 			})
 			if b.Value[len(b.Value)-1].Amount+v.addAmount < v.subAmount {
 				log.RosettaLog.Errorf("key:%s,current amount:%d,addAmount:%d,subAmount:%d,height:%d", k, b.Value[len(b.Value)-1].Amount, v.addAmount, v.subAmount, height)
@@ -672,9 +667,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 				}
 				b.StartBlockNum = height
 				b.EndBlockNum = height
-				for _, v := range balance.Value {
-					b.Value = append(b.Value, v)
-				}
+				b.Value = append(b.Value, balance.Value...)
 				buf := b.Serialization()
 				store.BatchPut([]byte(getAccKey(balance.Key, util.FIRST_PAGE_NUM)), buf)
 				store.BatchPut([]byte(balance.Key), []byte(util.FIRST_PAGE_NUM))
@@ -724,9 +717,7 @@ func batchSaveBalance(store *db.Store, height uint32, balances []*BalanceInfo) e
 				}
 			} else {
 				b.EndBlockNum = height
-				for _, v := range balance.Value {
-					b.Value = append(b.Value, v)
-				}
+				b.Value = append(b.Value, balance.Value...)
 				buf := b.Serialization()
 				store.BatchPut([]byte(getAccKey(balance.Key, pageNum)), buf)
 			}

@@ -309,14 +309,14 @@ func IsONG(contractAddr string) bool {
 }
 
 // whether the contract address is Native contract
-func isNative(contractAddr string) bool {
-	return strings.EqualFold(contractAddr, ONT_ADDRESS) ||
-		strings.EqualFold(contractAddr, ONG_ADDRESS) ||
-		strings.EqualFold(contractAddr, ONTID_ADDRESS) ||
-		strings.EqualFold(contractAddr, PARAM_ADDRESS) ||
-		strings.EqualFold(contractAddr, AUTH_ADDRESS) ||
-		strings.EqualFold(contractAddr, GOV_ADDRESS)
-}
+//func isNative(contractAddr string) bool {
+//	return strings.EqualFold(contractAddr, ONT_ADDRESS) ||
+//		strings.EqualFold(contractAddr, ONG_ADDRESS) ||
+//		strings.EqualFold(contractAddr, ONTID_ADDRESS) ||
+//		strings.EqualFold(contractAddr, PARAM_ADDRESS) ||
+//		strings.EqualFold(contractAddr, AUTH_ADDRESS) ||
+//		strings.EqualFold(contractAddr, GOV_ADDRESS)
+//}
 
 // whether the contract address is a registered OEP4 contract
 func IsOEP4(contractAddr string) bool {
