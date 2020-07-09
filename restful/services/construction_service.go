@@ -299,6 +299,7 @@ func (c ConstructionAPIService) ConstructionPayloads(
 		Bytes:         sink.Bytes(),
 		SignatureType: types.Ecdsa,
 	}
+	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
 	resp.Payloads = append(resp.Payloads, payLoad)
 	return resp, nil
 }
