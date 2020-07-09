@@ -55,7 +55,7 @@ func (c ConstructionAPIService) ConstructionCombine(
 		return nil, TRANSACTION_HEX_ERROR
 	}
 	signs := req.Signatures
-	if signs == nil || len(signs) == 0 {
+	if len(signs) == 0 {
 		return nil, NO_SIGS_ERROR
 	}
 
@@ -148,8 +148,7 @@ func (c ConstructionAPIService) ConstructionHash(
 	if err != nil {
 		return resp, PARAMS_ERROR
 	}
-	var hash common.Uint256
-	hash = txn.Hash()
+	var hash = txn.Hash()
 	resp.TransactionHash = hash.ToHexString()
 	return resp, nil
 }

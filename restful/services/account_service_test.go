@@ -37,8 +37,7 @@ func TestGetHeightFromStore(t *testing.T) {
 	balances = append(balances, &Balance{Height: 15, Amount: 9})
 	balances = append(balances, &Balance{Height: 25, Amount: 15})
 	balanceInfos = append(balanceInfos, &BalanceInfo{Key: getAddrKey("AN8JWdUKz5rhpemD61NkAWmS6eb5WXtmq5", util.ONT_ADDRESS), Value: balances})
-	var height uint32
-	height = 20
+	var height uint32 = 20
 	err = batchSaveBalance(db, height, balanceInfos)
 	if err != nil {
 		t.Error(err)
