@@ -53,6 +53,18 @@ var (
 	Currencies                 map[string]*rtypes.Currency
 	EACH_PAGE_SVAE_BALANCE_NUM = 10
 	FIRST_PAGE_NUM             = "1"
+	GAS_PRICE                  = "gasPrice"
+	GAS_LIMIT                  = "gasLimit"
+	ASSET                      = "asset"
+	TO_ADDR                    = "toAddr"
+	FROM_ADDR                  = "fromAddr"
+	SYMBOL                     = "symbol"
+	DECIMALS                   = "decimals"
+	AMOUNT                     = "amount"
+	PAYER                      = "payer"
+	ONT                        = "ont"
+	ONG                        = "ong"
+	TRANSFER                   = "transfer"
 )
 
 // initialize currencies by default

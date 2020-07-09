@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package services
 
 import "github.com/coinbase/rosetta-sdk-go/types"
@@ -148,7 +147,6 @@ var (
 		Message:   "db store error",
 		Retriable: true,
 	}
-
 	PUBKEY_HEX_ERROR = &types.Error{
 		Code:      514,
 		Message:   "invalid pubkey hex bytes",
@@ -184,9 +182,43 @@ var (
 		Message:   "invalid signature",
 		Retriable: false,
 	}
-
-	INVALID_ADDRESS_TYPE_ERROR = &types.Error{
+	ASSET_ERROR = &types.Error{
+		Code:      521,
+		Message:   "unsupport asset type",
+		Retriable: false,
+	}
+	PAYER_ERROR = &types.Error{
+		Code:      522,
+		Message:   "payer address invalid",
+		Retriable: false,
+	}
+	TRANSFER_TX_ERROR = &types.Error{
+		Code:      523,
+		Message:   "construct transfer tx error",
+		Retriable: false,
+	}
+	TX_INTO_IMMUTABLE_ERROR = &types.Error{
 		Code:      524,
+		Message:   "tx into immutable error",
+		Retriable: false,
+	}
+	PARSE_OPERATION_ERROR = &types.Error{
+		Code:      525,
+		Message:   "parse operation error",
+		Retriable: false,
+	}
+	PARSE_GAS_PRICE_ERORR = &types.Error{
+		Code:      526,
+		Message:   "parse gas price error",
+		Retriable: false,
+	}
+	PARSE_LIMIT_PRICE_ERORR = &types.Error{
+		Code:      527,
+		Message:   "parse gas limit error",
+		Retriable: false,
+	}
+	INVALID_ADDRESS_TYPE_ERROR = &types.Error{
+		Code:      528,
 		Message:   "not a supported address type",
 		Retriable: false,
 	}

@@ -69,6 +69,9 @@ func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.M
 		log.RosettaLog.Errorf("MempoolTransaction: %s", err)
 		return nil, TX_NOT_EXIST_IN_MEM
 	}
+	if tx.Tx == nil || tx.Tx.Payload == nil {
+		return nil, PARAMS_ERROR
+	}
 	invokeCode, ok := tx.Tx.Payload.(*payload.InvokeCode)
 	if !ok {
 		log.RosettaLog.Errorf("MempoolTransaction: invalid tx payload")

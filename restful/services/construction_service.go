@@ -15,25 +15,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package services
 
 import (
 	"context"
 	"encoding/hex"
-	"github.com/ontio/ontology-crypto/keypair"
-	"github.com/ontio/ontology-rosetta/utils"
-	"github.com/ontio/ontology/core/signature"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/ontio/ontology-crypto/keypair"
 	log "github.com/ontio/ontology-rosetta/common"
+	"github.com/ontio/ontology-rosetta/config"
 	db "github.com/ontio/ontology-rosetta/store"
+	util "github.com/ontio/ontology-rosetta/utils"
+	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/core/payload"
+	"github.com/ontio/ontology/core/signature"
 	ctypes "github.com/ontio/ontology/core/types"
 	ontErrors "github.com/ontio/ontology/errors"
-	"github.com/ontio/ontology/http/base/actor"
 	bcomn "github.com/ontio/ontology/http/base/common"
 )
 
@@ -59,7 +62,7 @@ func (c ConstructionAPIService) ConstructionCombine(
 	//todo how to solve multi-sign addr case
 	ontsigns := make([]ctypes.Sig, len(signs))
 	for i, s := range signs {
-		pk, err := utils.TransformPubkey(s.PublicKey)
+		pk, err := util.TransformPubkey(s.PublicKey)
 		if err != nil {
 			return nil, PUBKEY_HEX_ERROR
 		}
@@ -106,9 +109,9 @@ func (c ConstructionAPIService) ConstructionDerive(
 ) (*types.ConstructionDeriveResponse, *types.Error) {
 
 	pubkey := req.PublicKey
+	//ct := pubkey.CurveType
 	meta := req.Metadata
 	bts := pubkey.Bytes
-
 	pk, err := keypair.DeserializePublicKey(bts)
 	if err != nil {
 		return nil, PUBKEY_HEX_ERROR
@@ -116,7 +119,7 @@ func (c ConstructionAPIService) ConstructionDerive(
 	addr := ctypes.AddressFromPubKey(pk)
 
 	resp := new(types.ConstructionDeriveResponse)
-
+	// currently we only support base58 or hex format
 	// currently we only support base58 or hex format
 	if meta == nil {
 		resp.Address = addr.ToBase58()
@@ -133,31 +136,226 @@ func (c ConstructionAPIService) ConstructionDerive(
 }
 
 func (c ConstructionAPIService) ConstructionHash(
-	context.Context,
-	*types.ConstructionHashRequest,
+	ctx context.Context,
+	request *types.ConstructionHashRequest,
 ) (*types.ConstructionHashResponse, *types.Error) {
-	panic("implement me")
+	resp := &types.ConstructionHashResponse{}
+	bys, err := common.HexToBytes(request.SignedTransaction)
+	if err != nil {
+		return resp, PARAMS_ERROR
+	}
+	txn, err := ctypes.TransactionFromRawBytes(bys)
+	if err != nil {
+		return resp, PARAMS_ERROR
+	}
+	var hash common.Uint256
+	hash = txn.Hash()
+	resp.TransactionHash = hash.ToHexString()
+	return resp, nil
 }
 
 func (c ConstructionAPIService) ConstructionParse(
-	context.Context,
-	*types.ConstructionParseRequest,
+	ctx context.Context,
+	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
-	panic("implement me")
+	resp := &types.ConstructionParseResponse{
+		Signers:    make([]string, 0),
+		Operations: []*types.Operation{},
+		Metadata:   make(map[string]interface{}),
+	}
+	txData, err := hex.DecodeString(request.Transaction)
+	if err != nil {
+		return resp, PARAMS_ERROR
+	}
+	tx, err := ctypes.TransactionFromRawBytes(txData)
+	if err != nil {
+		return resp, PARAMS_ERROR
+	}
+	if tx == nil {
+		return resp, PARAMS_ERROR
+	}
+	invokeCode, ok := tx.Payload.(*payload.InvokeCode)
+	if !ok {
+		log.RosettaLog.Errorf("ConstructionParse: invalid tx payload")
+		return resp, INVALID_PAYLOAD
+	}
+	resp.Metadata[util.PAYER] = tx.Payer.ToBase58()
+	transferState, contract, err := util.ParsePayload(invokeCode.Code)
+	if err != nil {
+		log.RosettaLog.Errorf("ConstructionParse: %s", err)
+		return resp, INVALID_PAYLOAD
+	}
+	currency, ok := util.Currencies[strings.ToLower(contract.ToHexString())]
+	if !ok {
+		log.RosettaLog.Errorf("ConstructionParse: tx currency %s not exist", contract.ToHexString())
+		return resp, CURRENCY_NOT_CONFIG
+	}
+	for i, state := range transferState {
+		operationFrom := &types.Operation{
+			OperationIdentifier: &types.OperationIdentifier{Index: 2 * int64(i)},
+			Type:                config.OP_TYPE_TRANSFER,
+			Status:              config.STATUS_SUCCESS.Status,
+			Account: &types.AccountIdentifier{
+				Address: state.From.ToBase58(),
+			},
+			Amount: &types.Amount{
+				Value:    fmt.Sprintf("-%d", state.Value),
+				Currency: currency,
+			},
+		}
+		if request.Signed {
+			resp.Signers = append(resp.Signers, state.From.ToBase58())
+		}
+		resp.Operations = append(resp.Operations, operationFrom)
+		operationTo := &types.Operation{
+			OperationIdentifier: &types.OperationIdentifier{Index: 2*int64(i) + 1},
+			RelatedOperations: []*types.OperationIdentifier{
+				{Index: operationFrom.OperationIdentifier.Index},
+			},
+			Type:   config.OP_TYPE_TRANSFER,
+			Status: config.STATUS_SUCCESS.Status,
+			Account: &types.AccountIdentifier{
+				Address: state.To.ToBase58(),
+			},
+			Amount: &types.Amount{
+				Value:    fmt.Sprint(state.Value),
+				Currency: currency,
+			},
+			Metadata: make(map[string]interface{}),
+		}
+		operationTo.Metadata[util.GAS_PRICE] = tx.GasLimit
+		operationTo.Metadata[util.GAS_LIMIT] = tx.GasPrice
+		resp.Operations = append(resp.Operations, operationTo)
+	}
+	return resp, nil
 }
 
 func (c ConstructionAPIService) ConstructionPayloads(
-	context.Context,
-	*types.ConstructionPayloadsRequest,
+	ctx context.Context,
+	request *types.ConstructionPayloadsRequest,
 ) (*types.ConstructionPayloadsResponse, *types.Error) {
-	panic("implement me")
+	resp := &types.ConstructionPayloadsResponse{
+		Payloads: make([]*types.SigningPayload, 0),
+	}
+	payerAddr := request.Metadata[util.PAYER].(string)
+	var gasPrice, gasLimit float64
+	var fromAddr, toAddr, fromAmount, toAmount, fromSymbol, toSymbol string
+	var fromDecimals, toDecimals int32
+	for _, operation := range request.Operations {
+		if operation.OperationIdentifier.Index == 0 {
+			fromAddr = operation.Account.Address
+			fromAmount = operation.Amount.Value
+			fromSymbol = operation.Amount.Currency.Symbol
+			fromDecimals = operation.Amount.Currency.Decimals
+		}
+		if operation.OperationIdentifier.Index == 1 {
+			for _, relatedOperation := range operation.RelatedOperations {
+				if relatedOperation.Index == 0 {
+					continue
+				}
+			}
+			gasprice := operation.Metadata[util.GAS_PRICE]
+			var ok bool
+			gasPrice, ok = gasprice.(float64)
+			if !ok {
+				return resp, PARSE_GAS_PRICE_ERORR
+			}
+			gaslimit := operation.Metadata[util.GAS_LIMIT]
+			gasLimit, ok = gaslimit.(float64)
+			if !ok {
+				return resp, PARSE_LIMIT_PRICE_ERORR
+			}
+			toAddr = operation.Account.Address
+			toAmount = operation.Amount.Value
+			toSymbol = operation.Amount.Currency.Symbol
+			toDecimals = operation.Amount.Currency.Decimals
+		}
+	}
+	if fromSymbol != toSymbol || fromDecimals != toDecimals || fromAmount[1:] != toAmount {
+		return resp, PARAMS_ERROR
+	}
+	amount, err := strconv.ParseUint(toAmount, 10, 64)
+	if err != nil {
+		return resp, PARAMS_ERROR
+	}
+	mutTx, err := utils.TransferTx(uint64(gasPrice), uint64(gasLimit), toSymbol, fromAddr, toAddr, amount)
+	if err != nil {
+		return resp, TRANSFER_TX_ERROR
+	}
+	if payerAddr != "" {
+		payer, err := common.AddressFromBase58(payerAddr)
+		if err != nil {
+			return resp, PAYER_ERROR
+		}
+		mutTx.Payer = payer
+	}
+	tx, err := mutTx.IntoImmutable()
+	if err != nil {
+		return resp, TX_INTO_IMMUTABLE_ERROR
+	}
+	sink := common.ZeroCopySink{}
+	tx.Serialization(&sink)
+	payLoad := &types.SigningPayload{
+		Address:       fromAddr,
+		Bytes:         sink.Bytes(),
+		SignatureType: types.Ecdsa,
+	}
+	resp.Payloads = append(resp.Payloads, payLoad)
+	return resp, nil
 }
 
 func (c ConstructionAPIService) ConstructionPreprocess(
-	context.Context,
-	*types.ConstructionPreprocessRequest,
+	ctx context.Context,
+	request *types.ConstructionPreprocessRequest,
 ) (*types.ConstructionPreprocessResponse, *types.Error) {
-	panic("implement me")
+	resp := &types.ConstructionPreprocessResponse{
+		Options: make(map[string]interface{}),
+	}
+	payerAddr := request.Metadata[util.PAYER].(string)
+	resp.Options[util.PAYER] = payerAddr
+	var fromAddr, toAddr, fromAmount, toAmount, fromSymbol, toSymbol string
+	var fromDecimals, toDecimals int32
+	for _, operation := range request.Operations {
+		if operation.OperationIdentifier.Index == 0 {
+			fromAddr = operation.Account.Address
+			fromAmount = operation.Amount.Value
+			fromSymbol = operation.Amount.Currency.Symbol
+			fromDecimals = operation.Amount.Currency.Decimals
+		}
+		if operation.OperationIdentifier.Index == 1 {
+			for _, relatedOperation := range operation.RelatedOperations {
+				if relatedOperation.Index == 0 {
+					continue
+				}
+			}
+			gasprice := operation.Metadata[util.GAS_PRICE]
+			var ok bool
+			gasPrice, ok := gasprice.(float64)
+			if !ok {
+				return resp, PARSE_GAS_PRICE_ERORR
+			}
+			gaslimit := operation.Metadata[util.GAS_LIMIT]
+			gasLimit, ok := gaslimit.(float64)
+			if !ok {
+				return resp, PARSE_LIMIT_PRICE_ERORR
+			}
+			resp.Options[util.GAS_PRICE] = gasPrice
+			resp.Options[util.GAS_LIMIT] = gasLimit
+			toAddr = operation.Account.Address
+			toAmount = operation.Amount.Value
+			toSymbol = operation.Amount.Currency.Symbol
+			toDecimals = operation.Amount.Currency.Decimals
+		}
+	}
+	if fromSymbol != toSymbol || fromDecimals != toDecimals || fromAmount[1:] != toAmount {
+		return resp, PARAMS_ERROR
+	}
+	resp.Options[util.FROM_ADDR] = fromAddr
+	resp.Options[util.TO_ADDR] = toAddr
+	resp.Options[util.SYMBOL] = fromSymbol
+	resp.Options[util.DECIMALS] = fromDecimals
+	resp.Options[util.AMOUNT] = toAmount
+	return resp, nil
 }
 
 func NewConstructionAPIService(network *types.NetworkIdentifier, store *db.Store) server.ConstructionAPIServicer {
@@ -169,26 +367,20 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	ctx context.Context,
 	request *types.ConstructionMetadataRequest,
 ) (*types.ConstructionMetadataResponse, *types.Error) {
-	//todo define the options
-	//ni := request.NetworkIdentifier
-	//opt := request.Options
-
-	//return the current block height and hash
-	//following by the example
-	height := actor.GetCurrentBlockHeight()
-	hash := actor.CurrentBlockHash()
-
-	metadata := make(map[string]interface{})
-	metadata["current_block_hash"] = hash.ToHexString()
-	metadata["current_block_height"] = height
-	historyHeight, err := getHeightFromStore(c.store)
-	if err != nil {
-		log.RosettaLog.Errorf("getHeightFromStore err:%s", err)
-	} else {
-		metadata["calcul_history_block_height"] = historyHeight
+	resp := &types.ConstructionMetadataResponse{
+		Metadata: make(map[string]interface{}),
 	}
-	resp := &types.ConstructionMetadataResponse{Metadata: metadata}
-
+	_, ok := request.Options[util.TRANSFER]
+	if !ok {
+		return resp, PARAMS_ERROR
+	}
+	resp.Metadata[util.GAS_PRICE] = "default gas price 2500,data type string"
+	resp.Metadata[util.GAS_LIMIT] = "default gas limit 2000,data type string"
+	resp.Metadata[util.PAYER] = "default from address,data type string"
+	resp.Metadata[util.FROM_ADDR] = "from address,data type string"
+	resp.Metadata[util.TO_ADDR] = "to address,data type string"
+	resp.Metadata[util.AMOUNT] = "amount,data type string"
+	resp.Metadata[util.ASSET] = "ont or ong,data type string"
 	return resp, nil
 }
 
