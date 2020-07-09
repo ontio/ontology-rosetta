@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package services
 
 import "github.com/coinbase/rosetta-sdk-go/types"
@@ -181,6 +182,12 @@ var (
 	INVALID_SIG_ERROR = &types.Error{
 		Code:      520,
 		Message:   "invalid signature",
+		Retriable: false,
+	}
+
+	INVALID_ADDRESS_TYPE_ERROR = &types.Error{
+		Code:      524,
+		Message:   "not a supported address type",
 		Retriable: false,
 	}
 )

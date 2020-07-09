@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package services
 
 import (
@@ -62,16 +63,8 @@ func (c ConstructionAPIService) ConstructionCombine(
 		if err != nil {
 			return nil, PUBKEY_HEX_ERROR
 		}
-		sigdata, err := hex.DecodeString(s.HexBytes)
-		if err != nil {
-			return nil, SIGS_FORMAT_ERROR
-		}
-		//verify the sigdata???
-		sigpayloaddata, err := hex.DecodeString(s.SigningPayload.HexBytes)
-		if err != nil {
-			return nil, SIGS_FORMAT_ERROR
-		}
-		err = signature.Verify(pk, sigpayloaddata, sigdata)
+		sigdata := s.Bytes
+		err = signature.Verify(pk, s.SigningPayload.Bytes, sigdata)
 		if err != nil {
 			return nil, INVALID_SIG_ERROR
 		}
@@ -113,13 +106,8 @@ func (c ConstructionAPIService) ConstructionDerive(
 ) (*types.ConstructionDeriveResponse, *types.Error) {
 
 	pubkey := req.PublicKey
-	//ct := pubkey.CurveType
 	meta := req.Metadata
-
-	bts, err := hex.DecodeString(pubkey.HexBytes)
-	if err != nil {
-		return nil, PUBKEY_HEX_ERROR
-	}
+	bts := pubkey.Bytes
 
 	pk, err := keypair.DeserializePublicKey(bts)
 	if err != nil {
@@ -129,12 +117,15 @@ func (c ConstructionAPIService) ConstructionDerive(
 
 	resp := new(types.ConstructionDeriveResponse)
 
+	// currently we only support base58 or hex format
 	if meta == nil {
 		resp.Address = addr.ToBase58()
 	} else if meta["type"] == strings.ToLower("hex") {
 		resp.Address = addr.ToHexString()
-	} else {
+	} else if meta["type"] == strings.ToLower("base58") {
 		resp.Address = addr.ToBase58()
+	} else {
+		return nil, INVALID_ADDRESS_TYPE_ERROR
 	}
 	resp.Metadata = meta
 
