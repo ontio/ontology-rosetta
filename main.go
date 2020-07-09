@@ -100,7 +100,7 @@ func setupAPP() *cli.App {
 		utils.DataDirFlag,
 		utils.WasmVerifyMethodFlag,
 		//account setting
-		//utils.WalletFileFlag,
+		utils.WalletFileFlag,
 		//utils.AccountAddressFlag,
 		//utils.AccountPassFlag,
 		//consensus setting
@@ -122,8 +122,8 @@ func setupAPP() *cli.App {
 		utils.MaxConnOutBoundFlag,
 		utils.MaxConnInBoundForSingleIPFlag,
 		//test mode setting
-		//utils.EnableTestModeFlag,
-		//utils.TestModeGenBlockTimeFlag,
+		utils.EnableTestModeFlag,
+		utils.TestModeGenBlockTimeFlag,
 		//rpc setting
 		//utils.RPCDisabledFlag,
 		//utils.RPCPortFlag,
