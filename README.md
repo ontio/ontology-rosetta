@@ -806,6 +806,71 @@ Sample
 }
 ```
 
+**/construction/derive**
+
+*Derive Address from Public Key*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+    "public_key":{
+        "hex_bytes":"<pubkey hex string>",
+        "curev_type":"secp256k1|edwards25519",
+        "metadata":{
+            "type":"hex|base58"
+        }
+    }
+}
+```
+
+Address type supports ```hex```  or ```base58``` format
+
+Response:
+
+Sample
+
+```json
+{
+    "address":"<address>",
+    "metadata":{
+         "type":"hex|base58"
+    }
+}
+```
+
+
+
+**/construction/preprocess**
+
+*Create Metadata Request*
+
+Request:
+
+```
+
+```
+
+
+
+Response:
+
+Sample
+
+```
+
+```
+
+
+
+
+
+
+
 
 
 
