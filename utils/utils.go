@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+//utilities for ontology
 package utils
 
 import (
@@ -53,6 +55,7 @@ var (
 	FIRST_PAGE_NUM             = "1"
 )
 
+// initialize currencies by default
 func InitCurrencies() error {
 	Currencies = make(map[string]*rtypes.Currency)
 	Currencies[ONT_ADDRESS] = &rtypes.Currency{
@@ -71,7 +74,6 @@ func InitCurrencies() error {
 		if err != nil {
 			log.RosettaLog.Debugf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 			continue
-			//return fmt.Errorf("get symbol from contract:%s ,failed:%s", scriptHash, err)
 		}
 		decimal, err := GetDecimals(scriptHash)
 		if err != nil {
@@ -88,6 +90,7 @@ func InitCurrencies() error {
 	return nil
 }
 
+// transform a rosetta transaction to ontology transaction
 func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) {
 	rt := new(rtypes.Transaction)
 	tmphash := tran.Hash()
@@ -125,7 +128,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					fromOpt := new(rtypes.Operation)
 					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
-						//NetworkIndex: nil,
 					}
 					fromOpt.Status = result
 
@@ -144,7 +146,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx*2 + 1),
-						//NetworkIndex: nil,
 					}
 					toOpt.RelatedOperations = []*rtypes.OperationIdentifier{
 						{
@@ -169,7 +170,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
-						//NetworkIndex: nil,
 					}
 
 					toOpt.Type = config.OP_TYPE_TRANSFER
@@ -188,7 +188,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 				}
 			}
 		} else {
-			// deal oep4 token
+			// deal with oep4 token
 			method, err := hex.DecodeString(states[0].(string))
 			if err != nil {
 				return nil, err
@@ -208,7 +208,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					fromOpt := new(rtypes.Operation)
 					fromOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
-						//NetworkIndex: nil,
 					}
 					fromOpt.Status = result
 					fromOpt.Type = config.OP_TYPE_TRANSFER // this should always be "transfer"
@@ -230,7 +229,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx*2 + 1),
-						//NetworkIndex: nil,
 					}
 					toOpt.RelatedOperations = []*rtypes.OperationIdentifier{
 						{
@@ -260,7 +258,6 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					toOpt := new(rtypes.Operation)
 					toOpt.OperationIdentifier = &rtypes.OperationIdentifier{
 						Index: int64(idx * 2),
-						//NetworkIndex: nil,
 					}
 
 					toOpt.Type = config.OP_TYPE_TRANSFER
@@ -283,22 +280,23 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					idx += 1
 				}
 			}
-
 		}
-
 	}
 	rt.Operations = opts
 	return rt, nil
 }
 
+// whether the contract address is ONT contract
 func IsONT(contractAddr string) bool {
 	return strings.EqualFold(contractAddr, ONT_ADDRESS)
 }
 
+// whether the contract address is ONG contract
 func IsONG(contractAddr string) bool {
 	return strings.EqualFold(contractAddr, ONG_ADDRESS)
 }
 
+// whether the contract address is Native contract
 func isNative(contractAddr string) bool {
 	return strings.EqualFold(contractAddr, ONT_ADDRESS) ||
 		strings.EqualFold(contractAddr, ONG_ADDRESS) ||
@@ -308,8 +306,8 @@ func isNative(contractAddr string) bool {
 		strings.EqualFold(contractAddr, GOV_ADDRESS)
 }
 
+// whether the contract address is a registered OEP4 contract
 func IsOEP4(contractAddr string) bool {
-
 	for _, oep4 := range config.Conf.MonitorOEP4ScriptHash {
 		if strings.EqualFold(contractAddr, oep4) {
 			return true
@@ -318,6 +316,7 @@ func IsOEP4(contractAddr string) bool {
 	return false
 }
 
+// return token decimals
 func GetDecimals(contractAddr string) (int32, error) {
 	if IsONT(contractAddr) {
 		return constants.ONT_DECIMALS, nil
@@ -339,6 +338,7 @@ func GetDecimals(contractAddr string) (int32, error) {
 	return 0, fmt.Errorf("not a supported contract")
 }
 
+// return token symbol
 func GetSymbol(contractAddr string) (string, error) {
 	if IsONT(contractAddr) {
 		return constants.ONT_SYMBOL, nil
@@ -361,6 +361,7 @@ func GetSymbol(contractAddr string) (string, error) {
 	return "UNKNOWN", fmt.Errorf("not a supported contract")
 }
 
+//return token metadata
 func GetMetatdata(contractAddr string) map[string]interface{} {
 	meta := make(map[string]interface{})
 	meta["ContractAddress"] = contractAddr
@@ -376,6 +377,7 @@ func GetMetatdata(contractAddr string) map[string]interface{} {
 	return meta
 }
 
+//return currency of the given contract address
 func GetCurrency(contractAddress string) *rtypes.Currency {
 	c, ok := Currencies[strings.ToLower(contractAddress)]
 	if !ok {
@@ -400,6 +402,7 @@ func GetCurrency(contractAddress string) *rtypes.Currency {
 	return c
 }
 
+// pre-execuse neovm contract for query informations
 func PreExecNeovmContract(contractAddress string, method string, params []interface{}) (interface{}, error) {
 
 	addr, err := common.AddressFromHexString(contractAddress)
@@ -422,15 +425,14 @@ func PreExecNeovmContract(contractAddress string, method string, params []interf
 
 }
 
+// whether the given contract address is monitored
 func IsMonitoredAddress(contractAddress string) bool {
 	return IsONT(contractAddress) || IsONG(contractAddress) || IsOEP4(contractAddress)
 }
 
+// transform a rosetta public key to ontology public key
 func TransformPubkey(pk *rtypes.PublicKey) (keypair.PublicKey, error) {
-	pkbts, err := hex.DecodeString(pk.HexBytes)
-	if err != nil {
-		return nil, err
-	}
+	pkbts := pk.Bytes
 	pubkey, err := keypair.DeserializePublicKey(pkbts)
 	if err != nil {
 		return nil, err

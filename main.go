@@ -144,8 +144,9 @@ func setupAPP() *cli.App {
 	return app
 }
 
-//modify go.mod ontology version need change ONTOLOGY_VERSION
+// modify go.mod ontology version need change ONTOLOGY_VERSION
 
+// this main function is based on ontology main function
 func main() {
 	if err := setupAPP().Run(os.Args); err != nil {
 		cmd.PrintErrorMsg(err.Error())

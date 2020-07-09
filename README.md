@@ -29,7 +29,7 @@ docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log
 
 The default configuration file is rosetta-config.json
 
-```
+```json
 {
   "rosetta":{
     "version": "1.4.1",
@@ -551,74 +551,7 @@ Sample:
 
 ### Construction
 
-**/construction/metadata**
-
-*Get Transaction Construction Metadata*
-
-Request:
-
-```json
-{
-    "network_identifier":  {
-            "blockchain": "ont",
-            "network": "mainnet"
-        },
-     "options": {}
-}
-```
-
-Response:
-
-Sample
-
-```json
-{
-    "metadata": {
-        "calcul_history_block_height": 3627077,
-        "current_block_hash": "832ed41b4e79641288ea8cd341b7949ee4773c8abb8288f4386422f9248df911",
-        "current_block_height": 3627179
-    }
-}
-```
-
-- calcul_history_block_height:  current account balance calculate block height.
-
-
-- current_block_hash: current block hash.
-- current_block_height: current block height.
-
-
-
-**/construction/submit**
-
-*Submit a Signed Transaction*
-
-Request:
-
-```json
-{
-    "network_identifier":  {
-            "blockchain": "ont",
-            "network": "mainnet"
-        },
-     "signed_transaction": "<signed tx hex>"
-}
-```
-
-Response:
-
-Sample
-
-```json
-{
-    "transaction_identifier": {
-        "hash": "<tx hash>"
-    },
-    "metadata": {}
-}
-```
-
-**/construction/derive**
+****/construction/derive**
 
 *Derive Address from Public Key*
 
@@ -678,6 +611,200 @@ Sample
 ```
 
 
+
+**/construction/metadata**
+
+*Create Metadata Request*
+
+Request:
+
+```
+
+```
+
+
+
+Response:
+
+Sample
+
+```
+
+```
+
+
+
+**/construction/payloads**
+
+*Create Metadata Request*
+
+Request:
+
+```
+
+```
+
+
+
+Response:
+
+Sample
+
+```
+
+```
+
+
+
+**/construction/parse**
+
+*Create Metadata Request*
+
+Request:
+
+```
+
+```
+
+
+
+Response:
+
+Sample
+
+```
+
+```
+
+
+
+**/construction/combine**
+
+*Create Metadata Request*
+
+example:  account ```AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud``` transfer 1 ont to account ```Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS``` and  ```Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS``` will pay for the transfer fee as payer
+
+Request:
+
+```json
+{
+	    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "testnet"
+        },
+        "unsigned_transaction":"00d1594606d2c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
+        "signatures":[
+        		{
+	        	"signing_payload":{
+	        		"address":"Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
+	        		"hex_bytes":"2b371f76afde8a543fd0a6a58f2578281b3517e96c2a811114ea4c78e362b221",
+	        		"signature_type":"ecdsa"
+	        	},
+	        	"public_key":{
+	        		"hex_bytes":"02263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaae",
+	        		"curve_type":"secp256k1"
+	        	},
+	        	"signature_type":"ecdsa",
+	        	"hex_bytes":"3b52bc592bbba306ca9368e2808d6eb1d14fe0c3e2c801294bf8ebe3a994b464e6888038b6411a78428f9020b9f43c9dbcada7f77c0307b3ce9a410d8d2b6fa6"
+        	},
+        	{
+	        	"signing_payload":{
+	        		"address":"AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
+	        		"hex_bytes":"2b371f76afde8a543fd0a6a58f2578281b3517e96c2a811114ea4c78e362b221",
+	        		"signature_type":"ecdsa"
+	        	},
+	        	"public_key":{
+	        		"hex_bytes":"03944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7",
+	        		"curve_type":"secp256k1"
+	        	},
+	        	"signature_type":"ecdsa",
+	        	"hex_bytes":"a6f29359a94db9725ceafa37012abd3a02cff41fe1b3ca6fb0f4c58e86cd2e214567a5f29682cd4432404ecb8ded644bfb9324fe0eb746fe53097ffed13d11b1"
+        	}
+        ]
+}
+```
+
+
+
+Response:
+
+Sample
+
+```json
+{
+    "signed_transaction": "00d1594606d2c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000241403b52bc592bbba306ca9368e2808d6eb1d14fe0c3e2c801294bf8ebe3a994b464e6888038b6411a78428f9020b9f43c9dbcada7f77c0307b3ce9a410d8d2b6fa6232102263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaaeac4140a6f29359a94db9725ceafa37012abd3a02cff41fe1b3ca6fb0f4c58e86cd2e214567a5f29682cd4432404ecb8ded644bfb9324fe0eb746fe53097ffed13d11b1232103944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7ac"
+}
+```
+
+
+
+**/construction/metadata**
+
+*Get Transaction Construction Metadata*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+     "options": {}
+}
+```
+
+Response:
+
+Sample
+
+```json
+{
+    "metadata": {
+        "calcul_history_block_height": 3627077,
+        "current_block_hash": "832ed41b4e79641288ea8cd341b7949ee4773c8abb8288f4386422f9248df911",
+        "current_block_height": 3627179
+    }
+}
+```
+
+- calcul_history_block_height:  current account balance calculate block height.
+
+
+- current_block_hash: current block hash.
+
+- current_block_height: current block height.
+
+  ​
+
+**/construction/submit**
+
+*Submit a Signed Transaction*
+
+Request:
+
+```json
+{
+    "network_identifier":  {
+            "blockchain": "ont",
+            "network": "mainnet"
+        },
+     "signed_transaction": "<signed tx hex>"
+}
+```
+
+Response:
+
+Sample
+
+```json
+{
+    "transaction_identifier": {
+        "hash": "<tx hash>"
+    },
+    "metadata": {}
+}
+```
 
 
 
