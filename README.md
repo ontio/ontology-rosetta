@@ -793,16 +793,23 @@ Response:
 Sample
 
 ```json
+
 {
-    "unsigned_transaction": "00d1b8c16889204e000000000000c409000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
+    "unsigned_transaction": "00d18b02d0a0204e000000000000c409000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
     "payloads": [
         {
-            "hex_bytes": "a4a88f45b51e7aa01eedd0db3a7d7aff0a6e641256f3e073e8dbabb19358513f",
+            "hex_bytes": "4e6240066243bc2197fe8600791aba0175c6c259ea3293dbddc56d90eaf87298",
             "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
+            "signature_type": "ecdsa"
+        },
+        {
+            "hex_bytes": "4e6240066243bc2197fe8600791aba0175c6c259ea3293dbddc56d90eaf87298",
+            "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
             "signature_type": "ecdsa"
         }
     ]
 }
+
 ```
 
 **/construction/parse**

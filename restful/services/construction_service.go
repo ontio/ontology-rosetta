@@ -307,13 +307,21 @@ func (c ConstructionAPIService) ConstructionPayloads(
 	sink := common.ZeroCopySink{}
 	tx.Serialization(&sink)
 	txHash := tx.Hash()
-	payLoad := &types.SigningPayload{
+	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
+	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
+	resp.Payloads = append(resp.Payloads, &types.SigningPayload{
 		Address:       fromAddr,
 		Bytes:         txHash.ToArray(),
 		SignatureType: types.Ecdsa,
+	})
+	if payerAddr != "" {
+		resp.Payloads = append(resp.Payloads, &types.SigningPayload{
+			Address:       payerAddr,
+			Bytes:         txHash.ToArray(),
+			SignatureType: types.Ecdsa,
+		})
 	}
-	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
-	resp.Payloads = append(resp.Payloads, payLoad)
+
 	return resp, nil
 }
 
