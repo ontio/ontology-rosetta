@@ -308,7 +308,6 @@ func (c ConstructionAPIService) ConstructionPayloads(
 	tx.Serialization(&sink)
 	txHash := tx.Hash()
 	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
-	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
 	resp.Payloads = append(resp.Payloads, &types.SigningPayload{
 		Address:       fromAddr,
 		Bytes:         txHash.ToArray(),
