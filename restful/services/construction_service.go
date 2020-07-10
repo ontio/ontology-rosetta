@@ -313,7 +313,7 @@ func (c ConstructionAPIService) ConstructionPayloads(
 		Bytes:         txHash.ToArray(),
 		SignatureType: types.Ecdsa,
 	})
-	if payerAddr != "" {
+	if payerAddr != "" && payerAddr != fromAddr {
 		resp.Payloads = append(resp.Payloads, &types.SigningPayload{
 			Address:       payerAddr,
 			Bytes:         txHash.ToArray(),
