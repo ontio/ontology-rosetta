@@ -45,6 +45,8 @@ const (
 	ADDRESS_TYPE        = "type"
 	ADDRESS_TYPE_HEX    = "hex"
 	ADDRESS_TYPE_BASE58 = "base58"
+
+	METHOD_TYPE = "method"
 )
 
 type ConstructionAPIService struct {
@@ -382,10 +384,10 @@ func (c ConstructionAPIService) ConstructionMetadata(
 	resp := &types.ConstructionMetadataResponse{
 		Metadata: make(map[string]interface{}),
 	}
-	_, ok := request.Options[util.TRANSFER]
-	if !ok {
-		return resp, PARAMS_ERROR
+	if request.Options[METHOD_TYPE] != util.TRANSFER {
+		return nil, PARAMS_ERROR
 	}
+
 	resp.Metadata[util.GAS_PRICE] = "default gas price 2500,data type string"
 	resp.Metadata[util.GAS_LIMIT] = "default gas limit 2000,data type string"
 	resp.Metadata[util.PAYER] = "default from address,data type string"

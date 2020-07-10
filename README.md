@@ -108,8 +108,8 @@ Sample
 ```json
 {
     "version": {
-        "rosetta_version": "1.3.1",
-        "node_version": "1.9.0"
+        "rosetta_version": "1.4.1",
+        "node_version": "1.11.0"
     },
     "allow": {
         "operation_statuses": [
@@ -679,27 +679,42 @@ Sample
     }
 }
 ```
-
 **/construction/metadata**
 
-*Create Metadata Request*
+*Get Transaction Construction Metadata*
 
 Request:
 
+```json
+{
+    "network_identifier": {
+        "blockchain": "ont",
+        "network": "privatenet"
+    },
+    "options": {
+        "method": "transfer"
+    }
+}
 ```
-
-```
-
-
 
 Response:
 
 Sample
 
-```
+```json
+{
+    "metadata": {
+        "amount": "amount,data type string",
+        "asset": "ont or ong,data type string",
+        "fromAddr": "from address,data type string",
+        "gasLimit": "default gas limit 2000,data type string",
+        "gasPrice": "default gas price 2500,data type string",
+        "payer": "default from address,data type string",
+        "toAddr": "to address,data type string"
+    }
+}
 
 ```
-
 
 
 **/construction/payloads**
@@ -955,49 +970,7 @@ Sample
     "transaction_hash": "cc45747a18862709f4ce50290ac331c94fb5ef6b608c36c90b00314884312b03"
 }
 ```
-**/construction/metadata**
 
-*Get Transaction Construction Metadata*
-
-Request:
-
-```json
-{
-    "network_identifier": {
-        "blockchain": "ont",
-        "network": "privatenet"
-    },
-    "options": {
-        "transfer": ""
-    }
-}
-```
-
-Response:
-
-Sample
-
-```json
-{
-    "metadata": {
-        "amount": "amount,data type string",
-        "asset": "ont or ong,data type string",
-        "fromAddr": "from address,data type string",
-        "gasLimit": "default gas limit 2000,data type string",
-        "gasPrice": "default gas price 2500,data type string",
-        "payer": "default from address,data type string",
-        "toAddr": "to address,data type string"
-    }
-}
-
-```
-
-- calcul_history_block_height:  current account balance calculate block height.
-
-
-- current_block_hash: current block hash.
-
-- current_block_height: current block height.
 
   ​
 
@@ -1030,46 +1003,6 @@ Sample
 }
 ```
 
-**/construction/derive**
-
-*Derive Address from Public Key*
-
-Request:
-
-```json
-{
-    "network_identifier":  {
-            "blockchain": "ont",
-            "network": "mainnet"
-        },
-    "public_key":{
-        "hex_bytes":"<pubkey hex string>",
-        "curev_type":"secp256k1|edwards25519",
-        "metadata":{
-            "type":"hex|base58"
-        }
-    }
-}
-```
-
-Address type supports ```hex```  or ```base58``` format
-
-Response:
-
-Sample
-
-```json
-{
-    "address":"<address>",
-    "metadata":{
-         "type":"hex|base58"
-    }
-}
-```
-
-
-
-
 
 ### Mempool
 
@@ -1101,8 +1034,6 @@ Sample
     ]
 }
 ```
-
-
 
 **/mempool/transaction**
 
