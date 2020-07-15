@@ -689,8 +689,8 @@ Request:
                 }
             },
             "metadata": {
-                "gasLimit": 2500,
-                "gasPrice": 20000
+                "gasLimit": 20000,
+                "gasPrice": 2500
             }
         }
     ],
@@ -710,8 +710,8 @@ Sample
         "amount": "1",
         "decimals": 0,
         "fromAddr": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-        "gasLimit": 2500,
-        "gasPrice": 20000,
+        "gasLimit": 20000,
+        "gasPrice": 2500,
         "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
         "symbol": "ONT",
         "toAddr": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
@@ -816,8 +816,8 @@ Request:
                 }
             },
             "metadata": {
-                "gasLimit": 2500,
-                "gasPrice": 20000
+                "gasLimit": 20000,
+                "gasPrice": 2500
             }
         }
     ],
@@ -920,8 +920,8 @@ Sample
                 }
             },
             "metadata": {
-                "gasLimit": 2500,
-                "gasPrice": 20000
+                "gasLimit": 20000,
+                "gasPrice": 2500
             }
         }
     ],
