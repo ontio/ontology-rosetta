@@ -2,6 +2,13 @@
 Ontology node which follows [Rosetta](https://github.com/coinbase/rosetta-specifications) BlockChain Standard
 
 
+
+## Overview
+
+Here we lay out the procedure one needs to follow to deploy an Ontology node that adheres to Rosetta's blockchain standards. By complying to the **Rosetta blockchain specifications**, we at Ontology aim to streamline the development process for blockchain developers by ensuring certain aspects of the system are structured in a manner such that basic operations such as the **deployment process**, **communication**, and certain **data formats** are **standardized**, thus increasing the **overall flexibility** of the system.
+
+
+
 ## Build docker image
 
 ```sh
@@ -583,7 +590,7 @@ Sample:
 
 ### Construction
 
-****/construction/derive**
+**/construction/derive**
 
 *Derive Address from Public Key*
 
@@ -831,6 +838,11 @@ Sample
         {
             "hex_bytes": "a4a88f45b51e7aa01eedd0db3a7d7aff0a6e641256f3e073e8dbabb19358513f",
             "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
+            "signature_type": "ecdsa"
+        },
+        {
+            "hex_bytes": "4e6240066243bc2197fe8600791aba0175c6c259ea3293dbddc56d90eaf87298",
+            "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
             "signature_type": "ecdsa"
         }
     ]
@@ -1151,186 +1163,6 @@ Sample
 
 
 
-## Docking with Construction API
+## Integrating using the Construction API
 
-Docking with ontology rosetta construction API may need following steps:
-
-### 1.  Create Account Off-line
-
-You can create an ontology account using [ontology node CLI](https://github.com/ontio/ontology/blob/master/docs/specifications/cli_user_guide.md#21-add-account) Or ontology SDKs
-
-
-
-### 2. Derive account from public key
-
-You can get the public key from wallet generated from step 1, and invoke the ```construction/derive``` api to check the address in ```hex``` or ```base58``` format.
-
-### 3. Construct a transfer transaction
-
-You need to invoke ```construction/payload``` api to create an unsigned transaction
-
-```json
-{
-	"network_identifier": {
-        "blockchain": "ont",
-        "network": "mainnet"
-    },
-    "operations": [
-        {
-            "operation_identifier": {
-                "index": 0
-            },
-            "type": "transfer",
-            "account": {
-                "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud"
-            },
-            "amount": {
-                "value": "-1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 1
-            },
-            "related_operations": [
-                {
-                    "index": 0
-                }
-            ],
-            "type": "transfer",
-            "account": {
-                "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-            },
-            "amount": {
-                "value": "1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            },
-            "metadata": {
-                "gasLimit": 2500,
-                "gasPrice": 20000
-            }
-        }
-    ],
-    "metadata": {
-        "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-    }
-}
-```
-
-you can check an verify the parameter with ```construction/preprocess``` and ```construction/metadata``` api , you can also use ```construction/parse``` to check the transaction parameters.
-
-
-
-### 4. Sign the payload
-
-You need to sign the payload from the response of step 3 using ontology SDKs or [sig-tool](https://github.com/xiemylogos/sign-svr) , 
-
-the payload sample:
-
-```json
-{
-    "unsigned_transaction": "00d1fb2f5b77204e000000000000c409000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
-    "payloads": [
-        {
-            "hex_bytes": "732b2e24ac4966f4b43ab565499f09b676eca1c96d6d039d21cf9c8338ee008e",
-            "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-            "signature_type": "ecdsa"
-        },
-        {
-            "hex_bytes": "732b2e24ac4966f4b43ab565499f09b676eca1c96d6d039d21cf9c8338ee008e",
-            "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
-            "signature_type": "ecdsa"
-        }
-    ]
-}
-```
-
-you need use the ```address``` and ```signature_type``` to sign the ```hex_bytes``` content,
-
-so you may need to construct the request like below:
-
-```json
-{
-	    "network_identifier":  {
-            "blockchain": "ont",
-            "network": "testnet"
-        },
-        "unsigned_transaction":"00d12981cfeec409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
-        "signatures":[
-        		{
-	        	"signing_payload":{
-	        		"address":"Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
-	        		"hex_bytes":"14d840eb85340de4d7bcdc4b66d66c716a228e4c5ec5189c5ebfbd003b0528bb",
-	        		"signature_type":"ecdsa"
-	        	},
-	        	"public_key":{
-	        		"hex_bytes":"02263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaae",
-	        		"curve_type":"secp256k1"
-	        	},
-	        	"signature_type":"ecdsa",
-	        	"hex_bytes":"0d92482c51240b7b8497ec8c1efb41d1d94e434433fb0b3642e4483ecd2083c672b9e73ff4194d84cc84012db78c2d283a4bb1dbec5dc66015a42dac0042f8d7"
-        	},
-        	{
-	        	"signing_payload":{
-	        		"address":"AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-	        		"hex_bytes":"14d840eb85340de4d7bcdc4b66d66c716a228e4c5ec5189c5ebfbd003b0528bb",
-	        		"signature_type":"ecdsa"
-	        	},
-	        	"public_key":{
-	        		"hex_bytes":"03944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7",
-	        		"curve_type":"secp256k1"
-	        	},
-	        	"signature_type":"ecdsa",
-	        	"hex_bytes":"637fdd1ac4b0cc5f36334b48b5fcd9494531ba88b5ec3e6ceb0fc49461e0e856f8a3aa4394be2c4a15a0358767a66d1acbf9a2ac9a12e4c628c9f8762db353db"
-        	}
-        ]
-}
-```
-
-
-
-### 5. Construct the signed transaction
-
-Use the step 4 's request, invoke the ```construction\combine``` to get the signed transaction:
-
-sample:
-
-```json
-{
-    "signed_transaction": "00d12981cfeec409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000241400d92482c51240b7b8497ec8c1efb41d1d94e434433fb0b3642e4483ecd2083c672b9e73ff4194d84cc84012db78c2d283a4bb1dbec5dc66015a42dac0042f8d7232102263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaaeac4140637fdd1ac4b0cc5f36334b48b5fcd9494531ba88b5ec3e6ceb0fc49461e0e856f8a3aa4394be2c4a15a0358767a66d1acbf9a2ac9a12e4c628c9f8762db353db232103944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7ac"
-}
-```
-
-
-
-### 6. Send and broadcast the transaction
-
-You can send the ```signed_transaction```  with ```construction\submit``` 
-
-
-
-### 7. Get transaction hash
-
-You can invoke ```construction/hash``` to get the signed transaction hash, you can check the transaction status with ```block/transaction``` or ```mempool/transaction``` API
-
-###  
-
-
-
-
-
+Please refer to [Dev document](https://docs.ont.io/ontology-node/node-deployment/rosetta-node#integrating-using-the-construction-api)
