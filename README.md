@@ -39,7 +39,7 @@ The default configuration file is rosetta-config.json
 ```json
 {
   "rosetta":{
-    "version": "1.4.1",
+    "version": "1.4.0",
     "port": 8080,
     "block_wait_time": 1
   },
@@ -115,7 +115,7 @@ Sample
 ```json
 {
     "version": {
-        "rosetta_version": "1.4.1",
+        "rosetta_version": "1.4.0",
         "node_version": "1.11.0"
     },
     "allow": {
