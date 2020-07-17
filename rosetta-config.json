@@ -1,6 +1,6 @@
 {
   "rosetta":{
-    "version": "1.4.1",
+    "version": "1.4.0",
     "port": 8080,
     "block_wait_time": 1
   },
