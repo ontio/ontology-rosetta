@@ -146,7 +146,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					fromOpt.Type = config.OP_TYPE_TRANSFER // this should always be "transfer"
 					amount := new(rtypes.Amount)
 					//for from account ,the amount value should be "-" minus
-					amount.Value = fmt.Sprintf("-%d", int64(states[3].(float64)))
+					amount.Value = fmt.Sprintf("%d", int64(states[3].(float64)))
 					amount.Currency = GetCurrency(contractAddress)
 					fromOpt.Amount = amount
 
@@ -225,7 +225,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 					fromOpt.Type = config.OP_TYPE_TRANSFER // this should always be "transfer"
 					amount := new(rtypes.Amount)
 
-					amount.Value = fmt.Sprintf("-%d", amt.Int64())
+					amount.Value = fmt.Sprintf("%d", amt.Int64())
 					amount.Currency = GetCurrency(contractAddress)
 					fromOpt.Amount = amount
 					addrFromTmp, _ := common.HexToBytes(states[1].(string))
