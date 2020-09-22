@@ -213,7 +213,7 @@ func (c ConstructionAPIService) ConstructionParse(
 				Address: state.From.ToBase58(),
 			},
 			Amount: &types.Amount{
-				Value:    fmt.Sprintf("%d", state.Value),
+				Value:    fmt.Sprintf("-%d", state.Value),
 				Currency: currency,
 			},
 		}
