@@ -127,15 +127,17 @@ func (c ConstructionAPIService) ConstructionDerive(
 		return nil, PUBKEY_HEX_ERROR
 	}
 	addr := ctypes.AddressFromPubKey(pk)
-
-	resp := new(types.ConstructionDeriveResponse)
+	resp := &types.ConstructionDeriveResponse{
+		AccountIdentifier: &types.AccountIdentifier{},
+		Metadata:          make(map[string]interface{}),
+	}
 	// currently we only support base58 or hex format
 	if meta == nil {
-		resp.Address = addr.ToBase58()
+		resp.AccountIdentifier.Address = addr.ToBase58()
 	} else if meta[ADDRESS_TYPE] == strings.ToLower(ADDRESS_TYPE_HEX) {
-		resp.Address = addr.ToHexString()
+		resp.AccountIdentifier.Address = addr.ToHexString()
 	} else if meta[ADDRESS_TYPE] == strings.ToLower(ADDRESS_TYPE_BASE58) {
-		resp.Address = addr.ToBase58()
+		resp.AccountIdentifier.Address = addr.ToBase58()
 	} else {
 		return nil, INVALID_ADDRESS_TYPE_ERROR
 	}
@@ -148,8 +150,10 @@ func (c ConstructionAPIService) ConstructionDerive(
 func (c ConstructionAPIService) ConstructionHash(
 	ctx context.Context,
 	request *types.ConstructionHashRequest,
-) (*types.ConstructionHashResponse, *types.Error) {
-	resp := &types.ConstructionHashResponse{}
+) (*types.TransactionIdentifierResponse, *types.Error) {
+	resp := &types.TransactionIdentifierResponse{
+		TransactionIdentifier: &types.TransactionIdentifier{},
+	}
 	bys, err := common.HexToBytes(request.SignedTransaction)
 	if err != nil {
 		return resp, PARAMS_ERROR
@@ -159,7 +163,7 @@ func (c ConstructionAPIService) ConstructionHash(
 		return resp, PARAMS_ERROR
 	}
 	hash := txn.Hash()
-	resp.TransactionHash = hash.ToHexString()
+	resp.TransactionIdentifier.Hash = hash.ToHexString()
 	return resp, nil
 }
 
@@ -169,9 +173,9 @@ func (c ConstructionAPIService) ConstructionParse(
 	request *types.ConstructionParseRequest,
 ) (*types.ConstructionParseResponse, *types.Error) {
 	resp := &types.ConstructionParseResponse{
-		Signers:    make([]string, 0),
-		Operations: []*types.Operation{},
-		Metadata:   make(map[string]interface{}),
+		Operations:               []*types.Operation{},
+		AccountIdentifierSigners: []*types.AccountIdentifier{},
+		Metadata:                 make(map[string]interface{}),
 	}
 	txData, err := hex.DecodeString(request.Transaction)
 	if err != nil {
@@ -209,12 +213,12 @@ func (c ConstructionAPIService) ConstructionParse(
 				Address: state.From.ToBase58(),
 			},
 			Amount: &types.Amount{
-				Value:    fmt.Sprintf("-%d", state.Value),
+				Value:    fmt.Sprintf("%d", state.Value),
 				Currency: currency,
 			},
 		}
 		if request.Signed {
-			resp.Signers = append(resp.Signers, state.From.ToBase58())
+			resp.AccountIdentifierSigners = append(resp.AccountIdentifierSigners, operationFrom.Account)
 		}
 		resp.Operations = append(resp.Operations, operationFrom)
 		operationTo := &types.Operation{
@@ -309,13 +313,17 @@ func (c ConstructionAPIService) ConstructionPayloads(
 	txHash := tx.Hash()
 	resp.UnsignedTransaction = hex.EncodeToString(sink.Bytes())
 	resp.Payloads = append(resp.Payloads, &types.SigningPayload{
-		Address:       fromAddr,
+		AccountIdentifier: &types.AccountIdentifier{
+			Address: fromAddr,
+		},
 		Bytes:         txHash.ToArray(),
 		SignatureType: types.Ecdsa,
 	})
 	if payerAddr != "" && payerAddr != fromAddr {
 		resp.Payloads = append(resp.Payloads, &types.SigningPayload{
-			Address:       payerAddr,
+			AccountIdentifier: &types.AccountIdentifier{
+				Address: payerAddr,
+			},
 			Bytes:         txHash.ToArray(),
 			SignatureType: types.Ecdsa,
 		})
@@ -409,7 +417,7 @@ func (c ConstructionAPIService) ConstructionMetadata(
 func (c ConstructionAPIService) ConstructionSubmit(
 	ctx context.Context,
 	request *types.ConstructionSubmitRequest,
-) (*types.ConstructionSubmitResponse, *types.Error) {
+) (*types.TransactionIdentifierResponse, *types.Error) {
 	//ni := request.NetworkIdentifier
 	txStr := request.SignedTransaction
 	if len(txStr) == 0 {
@@ -433,7 +441,7 @@ func (c ConstructionAPIService) ConstructionSubmit(
 
 	txhash := txn.Hash()
 
-	return &types.ConstructionSubmitResponse{
+	return &types.TransactionIdentifierResponse{
 		TransactionIdentifier: &types.TransactionIdentifier{Hash: txhash.ToHexString()},
 		Metadata:              nil,
 	}, nil
