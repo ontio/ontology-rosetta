@@ -91,18 +91,18 @@ func (s *BlockAPIService) Block(
 	}
 
 	//ignore genesis block tx
-	if *request.BlockIdentifier.Index == 0 {
-		return &types.BlockResponse{
-			Block: &types.Block{
-				BlockIdentifier:       blockIdentifier,
-				ParentBlockIdentifier: blockIdentifier,
-				Timestamp:             int64(block.Header.Timestamp) * 1000,
-				Transactions:          nil,
-				//Metadata:              nil,
-			},
-			OtherTransactions: nil,
-		}, nil
-	}
+	//if *request.BlockIdentifier.Index == 0 {
+	//	return &types.BlockResponse{
+	//		Block: &types.Block{
+	//			BlockIdentifier:       blockIdentifier,
+	//			ParentBlockIdentifier: blockIdentifier,
+	//			Timestamp:             int64(block.Header.Timestamp) * 1000,
+	//			Transactions:          nil,
+	//			//Metadata:              nil,
+	//		},
+	//		OtherTransactions: nil,
+	//	}, nil
+	//}
 
 	var parentblock *types.BlockIdentifier
 	if blocknum == 0 {
