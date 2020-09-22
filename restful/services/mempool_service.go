@@ -100,7 +100,7 @@ func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.M
 				Address: state.From.ToBase58(),
 			},
 			Amount: &types.Amount{
-				Value:    fmt.Sprintf("%d", state.Value),
+				Value:    fmt.Sprintf("-%d", state.Value),
 				Currency: currency,
 			},
 		}
