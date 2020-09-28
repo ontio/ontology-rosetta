@@ -103,9 +103,10 @@ func (n NetworkAPIService) NetworkOptions(
 	}
 
 	allow := &types.Allow{
-		OperationStatuses: optstatus,
-		OperationTypes:    operationTypes,
-		Errors:            errors,
+		OperationStatuses:       optstatus,
+		OperationTypes:          operationTypes,
+		Errors:                  errors,
+		HistoricalBalanceLookup: true,
 	}
 
 	return &types.NetworkOptionsResponse{
