@@ -22,12 +22,12 @@ package utils
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/ontio/ontology-crypto/keypair"
 	"strings"
 
-	rtypes "github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
 	"github.com/ontio/ontology-rosetta/config"
+	rtypes "github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
 	"github.com/ontio/ontology/core/ledger"
@@ -114,7 +114,7 @@ func TransformTransaction(tran *types.Transaction) (*rtypes.Transaction, error) 
 	if err != nil {
 		return nil, err
 	}
-	result := config.STATUS_SUCCESS.Status
+	result := &config.STATUS_SUCCESS.Status
 	idx := 0
 	for _, notify := range events.Notify {
 		contractAddress := notify.ContractAddress.ToHexString()

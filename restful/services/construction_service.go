@@ -208,7 +208,7 @@ func (c ConstructionAPIService) ConstructionParse(
 		operationFrom := &types.Operation{
 			OperationIdentifier: &types.OperationIdentifier{Index: 2 * int64(i)},
 			Type:                config.OP_TYPE_TRANSFER,
-			Status:              config.STATUS_SUCCESS.Status,
+			Status:              &config.STATUS_SUCCESS.Status,
 			Account: &types.AccountIdentifier{
 				Address: state.From.ToBase58(),
 			},
@@ -227,7 +227,7 @@ func (c ConstructionAPIService) ConstructionParse(
 				{Index: operationFrom.OperationIdentifier.Index},
 			},
 			Type:   config.OP_TYPE_TRANSFER,
-			Status: config.STATUS_SUCCESS.Status,
+			Status: &config.STATUS_SUCCESS.Status,
 			Account: &types.AccountIdentifier{
 				Address: state.To.ToBase58(),
 			},

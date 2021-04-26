@@ -101,6 +101,13 @@ func (s *AccountAPIService) AccountBalance(
 	}
 }
 
+func (s *AccountAPIService) AccountCoins(
+	ctx context.Context,
+	request *types.AccountCoinsRequest,
+) (*types.AccountCoinsResponse, *types.Error) {
+	return nil, NOT_IMPLEMENTED
+}
+
 func getCurrentOntOngBalance(resp *types.AccountBalanceResponse, address common.Address) (*types.AccountBalanceResponse, *types.Error) {
 	balance, err := bcomn.GetBalance(address)
 	if err != nil {
