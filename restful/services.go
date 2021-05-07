@@ -88,7 +88,7 @@ func NewService(restfulPort int32, p2pSvr *p2pserver.P2PServer, store *db.Store)
 	// The asserter automatically rejects incorrectly formatted
 	// requests.
 	//todo check the supprotedOperationTypes and historicalBalanceLookup parameter
-	asserter, err := asserter.NewServer([]string{util.TRANSFER}, true, []*types.NetworkIdentifier{network})
+	asserter, err := asserter.NewServer([]string{util.TRANSFER}, true, []*types.NetworkIdentifier{network}, nil, false)
 	if err != nil {
 		common.RosettaLog.Fatal(err)
 		return err

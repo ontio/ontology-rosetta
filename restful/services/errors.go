@@ -222,4 +222,9 @@ var (
 		Message:   "not a supported address type",
 		Retriable: false,
 	}
+	NOT_IMPLEMENTED = &types.Error{
+		Code:      529,
+		Message:   "method not implemented",
+		Retriable: false,
+	}
 )

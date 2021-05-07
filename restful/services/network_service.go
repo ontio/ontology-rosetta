@@ -19,6 +19,7 @@ package services
 
 import (
 	"context"
+
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	log "github.com/ontio/ontology-rosetta/common"
@@ -100,6 +101,7 @@ func (n NetworkAPIService) NetworkOptions(
 		PARSE_GAS_PRICE_ERORR,
 		PARSE_LIMIT_PRICE_ERORR,
 		INVALID_ADDRESS_TYPE_ERROR,
+		NOT_IMPLEMENTED,
 	}
 
 	allow := &types.Allow{

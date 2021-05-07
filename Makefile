@@ -9,6 +9,9 @@ PWD := $(shell pwd)
 ARCH=$(shell uname -m)
 SRC_FILES = $(shell git ls-files | grep -e .go$ | grep -v _test.go)
 
+test:
+	go test -v ./...
+
 rosetta-node: $(SRC_FILES)
 	CGO_ENABLED=1 $(GC)  $(BUILD_NODE_PAR) -o rosetta-node main.go
 

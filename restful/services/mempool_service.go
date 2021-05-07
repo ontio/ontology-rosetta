@@ -95,7 +95,7 @@ func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.M
 		operationFrom := &types.Operation{
 			OperationIdentifier: &types.OperationIdentifier{Index: 2 * int64(i)},
 			Type:                config.OP_TYPE_TRANSFER,
-			Status:              config.STATUS_SUCCESS.Status,
+			Status:              &config.STATUS_SUCCESS.Status,
 			Account: &types.AccountIdentifier{
 				Address: state.From.ToBase58(),
 			},
@@ -110,7 +110,7 @@ func (this *MemPoolService) MempoolTransaction(ctx context.Context, req *types.M
 				{Index: operationFrom.OperationIdentifier.Index},
 			},
 			Type:   config.OP_TYPE_TRANSFER,
-			Status: config.STATUS_SUCCESS.Status,
+			Status: &config.STATUS_SUCCESS.Status,
 			Account: &types.AccountIdentifier{
 				Address: state.To.ToBase58(),
 			},
