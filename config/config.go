@@ -55,7 +55,7 @@ type RosettaConfig struct {
 }
 
 const (
-	ONTOLOGY_VERSION = "1.11.0"
+	ONTOLOGY_VERSION = "1.13.0"
 	ROSETTA_CONFIG   = "./rosetta-config.json"
 )
 
