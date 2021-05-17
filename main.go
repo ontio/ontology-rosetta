@@ -19,47 +19,33 @@
 package main
 
 import (
-	"encoding/hex"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
-	"strings"
-	"syscall"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/fdlimit"
-	"github.com/ontio/ontology-crypto/keypair"
-	alog "github.com/ontio/ontology-eventbus/log"
-	cfg "github.com/ontio/ontology-rosetta/config"
-	rcfg "github.com/ontio/ontology-rosetta/config"
-	rconfig "github.com/ontio/ontology-rosetta/config"
-	services "github.com/ontio/ontology-rosetta/restful"
-	service "github.com/ontio/ontology-rosetta/restful/services"
-	"github.com/ontio/ontology-rosetta/store"
-	rutil "github.com/ontio/ontology-rosetta/utils"
-	"github.com/ontio/ontology/account"
+	eventbus "github.com/ontio/ontology-eventbus/log"
+	"github.com/ontio/ontology-rosetta/log"
+	"github.com/ontio/ontology-rosetta/process"
+	"github.com/ontio/ontology-rosetta/services"
+	"github.com/ontio/ontology-rosetta/version"
 	"github.com/ontio/ontology/cmd"
-	cmdcom "github.com/ontio/ontology/cmd/common"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
-	"github.com/ontio/ontology/common/log"
-	"github.com/ontio/ontology/consensus"
+	nodelog "github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/genesis"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/events"
-	bactor "github.com/ontio/ontology/http/base/actor"
-	hserver "github.com/ontio/ontology/http/base/actor"
-	"github.com/ontio/ontology/http/jsonrpc"
-	"github.com/ontio/ontology/http/localrpc"
-	"github.com/ontio/ontology/http/nodeinfo"
-	"github.com/ontio/ontology/http/restful"
-	"github.com/ontio/ontology/http/websocket"
+	"github.com/ontio/ontology/http/base/actor"
 	"github.com/ontio/ontology/p2pserver"
-	netreqactor "github.com/ontio/ontology/p2pserver/actor/req"
-	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
+	"github.com/ontio/ontology/p2pserver/actor/req"
 	"github.com/ontio/ontology/txnpool"
 	tc "github.com/ontio/ontology/txnpool/common"
 	"github.com/ontio/ontology/txnpool/proc"
@@ -68,450 +54,376 @@ import (
 	"github.com/urfave/cli"
 )
 
-func setupAPP() *cli.App {
-	app := cli.NewApp()
-	app.Usage = "Ontology CLI"
-	app.Action = startOntology
-	app.Version = config.Version
-	app.Copyright = "Copyright in 2018 The Ontology Authors"
-	app.Commands = []cli.Command{
-		//cmd.AccountCommand,
-		//cmd.InfoCommand,
-		//cmd.AssetCommand,
-		//cmd.ContractCommand,
-		cmd.ImportCommand,
-		cmd.ExportCommand,
-		//cmd.TxCommond,
-		//cmd.SigTxCommand,
-		//cmd.MultiSigAddrCommand,
-		//cmd.MultiSigTxCommand,
-		//cmd.SendTxCommand,
-		//cmd.ShowTxCommand,
-	}
-	app.Flags = []cli.Flag{
-		//common setting
-		rconfig.RosettaConfigFlag,
+var disableLogFile bool
 
+var (
+	offlineFlag = cli.BoolFlag{
+		Name:  "offline",
+		Usage: "Run the Rosetta server in offline mode",
+	}
+	serverConfigFlag = cli.StringFlag{
+		Name:  "server-config",
+		Value: "./server-config.json",
+		Usage: "Path to the config `<file>` for this Rosetta server",
+	}
+	validateStoreFlag = cli.BoolFlag{
+		Name:  "validate-store",
+		Usage: "Validate the indexed data in the Rosetta server's internal data store",
+	}
+)
+
+type token struct {
+	Contract string `json:"contract"`
+	Decimals int32  `json:"decimals"`
+	Symbol   string `json:"symbol"`
+	Wasm     bool   `json:"wasm"`
+}
+
+type serverConfig struct {
+	BlockWait  uint32   `json:"block_wait_seconds"`
+	OEP4Tokens []*token `json:"oep4_tokens"`
+	Port       uint32   `json:"port"`
+	tokens     []*services.OEP4Token
+	waitTime   time.Duration
+}
+
+func setupApp() *cli.App {
+	app := cli.NewApp()
+	app.Action = run
+	app.Copyright = "Copyright (c) The Ontology Authors"
+	app.Usage = "Ontology Rosetta Server"
+	app.Version = fmt.Sprintf(
+		"Ontology Rosetta Server: %s, Ontology Node: %s",
+		version.Rosetta, version.Node,
+	)
+	app.Flags = []cli.Flag{
+		// rosetta server settings
+		serverConfigFlag,
+		offlineFlag,
+		validateStoreFlag,
+		// base settings
 		utils.ConfigFlag,
-		utils.LogLevelFlag,
-		utils.LogDirFlag,
-		utils.DisableLogFileFlag,
-		utils.DisableEventLogFlag,
 		utils.DataDirFlag,
+		utils.DisableLogFileFlag,
+		utils.LogDirFlag,
+		utils.LogLevelFlag,
 		utils.WasmVerifyMethodFlag,
-		//account setting
-		//utils.WalletFileFlag,
-		//utils.AccountAddressFlag,
-		//utils.AccountPassFlag,
-		//consensus setting
-		//utils.EnableConsensusFlag,
-		//utils.MaxTxInBlockFlag,
-		//txpool setting
-		utils.GasPriceFlag,
-		utils.GasLimitFlag,
-		utils.TxpoolPreExecDisableFlag,
-		utils.DisableSyncVerifyTxFlag,
+		// txpool settings
 		utils.DisableBroadcastNetTxFlag,
-		//p2p setting
-		utils.ReservedPeersOnlyFlag,
-		utils.ReservedPeersFileFlag,
+		utils.DisableSyncVerifyTxFlag,
+		utils.GasLimitFlag,
+		utils.GasPriceFlag,
+		utils.TxpoolPreExecDisableFlag,
+		// p2p settings
+		utils.MaxConnInBoundFlag,
+		utils.MaxConnInBoundForSingleIPFlag,
+		utils.MaxConnOutBoundFlag,
 		utils.NetworkIdFlag,
 		utils.NodePortFlag,
-		utils.HttpInfoPortFlag,
-		utils.MaxConnInBoundFlag,
-		utils.MaxConnOutBoundFlag,
-		utils.MaxConnInBoundForSingleIPFlag,
-		//test mode setting
-		//utils.EnableTestModeFlag,
-		//utils.TestModeGenBlockTimeFlag,
-		//rpc setting
-		//utils.RPCDisabledFlag,
-		//utils.RPCPortFlag,
-		//utils.RPCLocalEnableFlag,
-		//utils.RPCLocalProtFlag,
-		//rest setting
-		//utils.RestfulEnableFlag,
-		//utils.RestfulPortFlag,
-		//utils.RestfulMaxConnsFlag,
-		//ws setting
-		//utils.WsEnabledFlag,
-		//utils.WsPortFlag,
+		utils.ReservedPeersFileFlag,
+		utils.ReservedPeersOnlyFlag,
 	}
 	app.Before = func(context *cli.Context) error {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		return nil
 	}
+	// NOTE(tav): Unfortunately, cmd.flagGroup isn't exported, so we resort to
+	// overriding the group for the import command as they are unused within
+	// this application.
+	idx := len(cmd.AppHelpFlagGroups) - 2
+	group := cmd.AppHelpFlagGroups[idx]
+	group.Name = "ROSETTA SERVER"
+	group.Flags = []cli.Flag{
+		serverConfigFlag,
+		offlineFlag,
+		validateStoreFlag,
+	}
+	cmd.AppHelpFlagGroups[idx] = group
 	return app
 }
 
-// modify go.mod ontology version need change ONTOLOGY_VERSION
-
-// this main function is based on ontology main function
-func main() {
-	if err := setupAPP().Run(os.Args); err != nil {
-		cmd.PrintErrorMsg(err.Error())
-		os.Exit(1)
-	}
+func cliBool(ctx *cli.Context, flag cli.Flag) bool {
+	return ctx.GlobalBool(utils.GetFlagName(flag))
 }
 
-func startOntology(ctx *cli.Context) {
-	initLog(ctx)
-	err := rcfg.InitConfig(ctx)
+func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
+	events.Init()
+	ldg, err := ledger.NewLedger(
+		filepath.Join(cfg.Common.DataDir, cfg.P2PNode.NetworkName),
+		config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId),
+	)
 	if err != nil {
-		log.Errorf("init Rosetta Config error: %s", err)
-		return
+		log.Fatalf("Failed to open ledger: %s", err)
 	}
-	log.Infof("ontology version %s", rconfig.ONTOLOGY_VERSION)
-
-	setMaxOpenFiles()
-
-	cfg, err := initConfig(ctx)
+	process.SetExitHandler(func() {
+		log.Info("Closing ledger")
+		if err := ldg.Close(); err != nil {
+			log.Errorf("Failed to close ledger: %s", err)
+		}
+	})
+	bk, err := cfg.GetBookkeepers()
 	if err != nil {
-		log.Errorf("initConfig error: %s", err)
-		return
+		log.Fatalf("Failed to get the bookkeeper config: %s", err)
 	}
-	acc, err := initAccount(ctx)
+	genesis, err := genesis.BuildGenesisBlock(bk, cfg.Genesis)
 	if err != nil {
-		log.Errorf("initWallet error: %s", err)
-		return
+		log.Fatalf("Failed to build the genesis block: %s", err)
 	}
-	stateHashHeight := config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId)
-	ldg, err := initLedger(ctx, stateHashHeight)
-	if err != nil {
-		log.Errorf("%s", err)
-		return
+	ledger.DefLedger = ldg
+	if err := ldg.Init(bk, genesis); err != nil {
+		log.Fatalf("Failed to initialize the ledger: %s", err)
 	}
-	txpool, err := initTxPool(ctx)
-	if err != nil {
-		log.Errorf("initTxPool error: %s", err)
-		return
-	}
-	p2pSvr, p2p, err := initP2PNode(ctx, txpool, acc)
-	if err != nil {
-		log.Errorf("initP2PNode error: %s", err)
-		return
-	}
-	_, err = initConsensus(ctx, p2p, txpool, acc)
-	if err != nil {
-		log.Errorf("initConsensus error: %s", err)
-		return
-	}
-	err = rutil.InitCurrencies()
-	if err != nil {
-		log.Errorf("InitCurrencies error: %s", err)
-		return
-	}
-	err = initRpc(ctx)
-	if err != nil {
-		log.Errorf("initRpc error: %s", err)
-		return
-	}
-	err = initLocalRpc(ctx)
-	if err != nil {
-		log.Errorf("initLocalRpc error: %s", err)
-		return
-	}
-	initRestful(ctx)
-	initWs(ctx)
-	initNodeInfo(ctx, p2pSvr)
-	store, err := initRosettaRestful(ctx, p2pSvr)
-	if err != nil {
-		return
-	}
-	go logCurrBlockHeight()
-	waitToExit(ldg, store)
+	log.Info("Ledger init success")
+	return ldg
 }
 
 func initLog(ctx *cli.Context) {
-	//init log module
-	logLevel := ctx.GlobalInt(utils.GetFlagName(utils.LogLevelFlag))
-	//if true, the log will not be output to the file
-	disableLogFile := ctx.GlobalBool(utils.GetFlagName(utils.DisableLogFileFlag))
+	disableLogFile = cliBool(ctx, utils.DisableLogFileFlag)
+	level := ctx.GlobalInt(utils.GetFlagName(utils.LogLevelFlag))
+	log.InitLog(level, log.Stdout)
 	if disableLogFile {
-		log.InitLog(logLevel, log.Stdout)
+		nodelog.InitLog(level, nodelog.Stdout)
 	} else {
-		logFileDir := ctx.GlobalString(utils.GetFlagName(utils.LogDirFlag))
-		logFileDir = filepath.Join(logFileDir, "") + string(os.PathSeparator)
-		alog.InitLog(logFileDir)
-		log.InitLog(logLevel, logFileDir, log.Stdout)
+		dir := ctx.GlobalString(utils.GetFlagName(utils.LogDirFlag))
+		dir = filepath.Join(dir, "") + string(os.PathSeparator)
+		eventbus.InitLog(dir)
+		// NOTE(tav): We override the global PATH variable as it is used by
+		// nodelog.CheckRotateLogFile when rotating log files.
+		nodelog.PATH = dir
+		nodelog.InitLog(level, dir, log.Stdout)
 	}
 }
 
-func initConfig(ctx *cli.Context) (*config.OntologyConfig, error) {
-	//init ontology config from cli
+func initNode(ctx *cli.Context, cfg *config.OntologyConfig, txpool *proc.TXPoolServer) *p2pserver.P2PServer {
+	if cfg.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
+		return nil
+	}
+	node, err := p2pserver.NewServer(nil)
+	if err != nil {
+		log.Fatalf("Failed to create Node P2P server: %s", err)
+	}
+	err = node.Start()
+	if err != nil {
+		log.Fatalf("Failed to start the Node P2P service: %s", err)
+	}
+	txpool.Net = node.GetNetwork()
+	req.SetTxnPoolPid(txpool.GetPID(tc.TxActor))
+	actor.SetNetServer(node.GetNetwork())
+	node.WaitForPeersStart()
+	log.Info("Node init success")
+	return node
+}
+
+func initNodeConfig(ctx *cli.Context) *config.OntologyConfig {
+	log.Infof("Ontology Node version: %s", version.Node)
+	log.Infof("Ontology Rosetta Server version: %s", version.Rosetta)
 	cfg, err := cmd.SetOntologyConfig(ctx)
 	if err != nil {
-		return nil, err
+		log.Fatalf("Failed to process node config: %s", err)
 	}
-	log.Infof("Config init success")
-	return cfg, nil
+	return cfg
 }
 
-func initAccount(ctx *cli.Context) (*account.Account, error) {
-	if !config.DefConfig.Consensus.EnableConsensus {
-		return nil, nil
+func initServer(ctx *cli.Context,
+	cfg *config.OntologyConfig,
+	scfg *serverConfig,
+	node *p2pserver.P2PServer,
+	offline bool,
+) {
+	store := initStore(cfg, scfg, offline)
+	done := make(chan bool, 1)
+	process.SetExitHandler(func() {
+		if !offline {
+			<-done
+		}
+		store.Close()
+	})
+	if !offline {
+		ctx, cancel := context.WithCancel(context.Background())
+		go store.IndexBlocks(ctx, services.IndexConfig{
+			Done:     done,
+			WaitTime: scfg.waitTime,
+		})
+		process.SetExitHandler(cancel)
 	}
-	walletFile := ctx.GlobalString(utils.GetFlagName(utils.WalletFileFlag))
-	if walletFile == "" {
-		return nil, fmt.Errorf("Please config wallet file using --wallet flag")
-	}
-	if !common.FileExisted(walletFile) {
-		return nil, fmt.Errorf("Cannot find wallet file: %s. Please create a wallet first", walletFile)
-	}
-
-	acc, err := cmdcom.GetAccount(ctx)
+	router, err := services.Router(node, store, offline)
 	if err != nil {
-		return nil, fmt.Errorf("get account error: %s", err)
+		log.Fatalf("Failed to load the Rosetta HTTP router: %s", err)
 	}
-	log.Infof("Using account: %s", acc.Address.ToBase58())
-
-	if config.DefConfig.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
-		curPk := hex.EncodeToString(keypair.SerializePublicKey(acc.PublicKey))
-		config.DefConfig.Genesis.SOLO.Bookkeepers = []string{curPk}
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", scfg.Port),
+		Handler:      router,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
-
-	log.Infof("Account init success")
-	return acc, nil
+	log.Infof("Starting Rosetta Server on port %d", scfg.Port)
+	go func() {
+		process.SetExitHandler(func() {
+			log.Info("Shutting down Rosetta HTTP Server gracefully")
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := srv.Shutdown(ctx); err != nil {
+				log.Errorf("Failed to shutdown Rosetta HTTP Server gracefully: %s", err)
+			}
+		})
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Rosetta HTTP Server failed: %s", err)
+		}
+	}()
 }
 
-func initLedger(ctx *cli.Context, stateHashHeight uint32) (*ledger.Ledger, error) {
-	events.Init() //Init event hub
-
-	var err error
-	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName)
-	ledger.DefLedger, err = ledger.NewLedger(dbDir, stateHashHeight)
+func initServerConfig(ctx *cli.Context) *serverConfig {
+	path := ctx.GlobalString(utils.GetFlagName(serverConfigFlag))
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("NewLedger error: %s", err)
+		log.Fatalf("Failed to open %q: %s", path, err)
 	}
-	bookKeepers, err := config.DefConfig.GetBookkeepers()
+	defer f.Close()
+	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, fmt.Errorf("GetBookkeepers error: %s", err)
+		log.Fatalf("Failed to read %q: %s", path, err)
 	}
-	genesisConfig := config.DefConfig.Genesis
-	genesisBlock, err := genesis.BuildGenesisBlock(bookKeepers, genesisConfig)
+	cfg := &serverConfig{}
+	err = json.Unmarshal(data, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("genesisBlock error %s", err)
+		log.Fatalf("Failed to decode %q: %s", path, err)
 	}
-	err = ledger.DefLedger.Init(bookKeepers, genesisBlock)
-	if err != nil {
-		return nil, fmt.Errorf("Init ledger error: %s", err)
+	if cfg.BlockWait == 0 {
+		cfg.BlockWait = 1
 	}
-
-	log.Infof("Ledger init success")
-	return ledger.DefLedger, nil
+	cfg.waitTime = time.Duration(cfg.BlockWait) * time.Second
+	for idx, token := range cfg.OEP4Tokens {
+		if token.Contract == "" {
+			log.Fatalf(
+				`Missing "contract" field for OEP4 token at offset %d in %q`,
+				idx, path,
+			)
+		}
+		contract, err := common.AddressFromHexString(token.Contract)
+		if err != nil {
+			log.Fatalf(
+				"Invalid OEP4 contract address %q found in %q: %s",
+				token.Contract, path, err,
+			)
+		}
+		if token.Decimals < 0 {
+			log.Fatalf(
+				`Invalid "decimals" value for OEP4 token at offset %d in %q: %d`,
+				idx, path, token.Decimals,
+			)
+		}
+		if token.Symbol == "" {
+			log.Fatalf(
+				`Missing "symbol" field for OEP4 token %q in %q`,
+				token.Contract, path,
+			)
+		}
+		cfg.tokens = append(cfg.tokens, &services.OEP4Token{
+			Contract: contract,
+			Decimals: token.Decimals,
+			Symbol:   token.Symbol,
+			Wasm:     token.Wasm,
+		})
+	}
+	if cfg.Port > 65535 {
+		log.Fatalf("Invalid port %d specified in %q", cfg.Port, path)
+	}
+	return cfg
 }
 
-func initTxPool(ctx *cli.Context) (*proc.TXPoolServer, error) {
-	disablePreExec := ctx.GlobalBool(utils.GetFlagName(utils.TxpoolPreExecDisableFlag))
-	bactor.DisableSyncVerifyTx = ctx.GlobalBool(utils.GetFlagName(utils.DisableSyncVerifyTxFlag))
-	disableBroadcastNetTx := ctx.GlobalBool(utils.GetFlagName(utils.DisableBroadcastNetTxFlag))
-	txPoolServer, err := txnpool.StartTxnPoolServer(disablePreExec, disableBroadcastNetTx)
+func initStore(cfg *config.OntologyConfig, scfg *serverConfig, offline bool) *services.Store {
+	store, err := services.NewStore(filepath.Join(
+		cfg.Common.DataDir,
+		cfg.P2PNode.NetworkName,
+		"store",
+	), scfg.tokens, offline)
 	if err != nil {
-		return nil, fmt.Errorf("Init txpool error: %s", err)
+		log.Fatalf("Unable to open the internal data store: %s", err)
+	}
+	return store
+}
+
+func initTxPool(ctx *cli.Context) *proc.TXPoolServer {
+	actor.DisableSyncVerifyTx = cliBool(ctx, utils.DisableSyncVerifyTxFlag)
+	txpool, err := txnpool.StartTxnPoolServer(
+		cliBool(ctx, utils.TxpoolPreExecDisableFlag),
+		cliBool(ctx, utils.DisableBroadcastNetTxFlag),
+	)
+	if err != nil {
+		log.Fatalf("Failed to start the TxPool server: %s", err)
 	}
 	stlValidator, _ := stateless.NewValidator("stateless_validator")
-	stlValidator.Register(txPoolServer.GetPID(tc.VerifyRspActor))
+	stlValidator.Register(txpool.GetPID(tc.VerifyRspActor))
 	stlValidator2, _ := stateless.NewValidator("stateless_validator2")
-	stlValidator2.Register(txPoolServer.GetPID(tc.VerifyRspActor))
+	stlValidator2.Register(txpool.GetPID(tc.VerifyRspActor))
 	stfValidator, _ := stateful.NewValidator("stateful_validator")
-	stfValidator.Register(txPoolServer.GetPID(tc.VerifyRspActor))
-
-	hserver.SetTxnPoolPid(txPoolServer.GetPID(tc.TxPoolActor))
-	hserver.SetTxPid(txPoolServer.GetPID(tc.TxActor))
-
-	log.Infof("TxPool init success")
-	return txPoolServer, nil
+	stfValidator.Register(txpool.GetPID(tc.VerifyRspActor))
+	actor.SetTxnPoolPid(txpool.GetPID(tc.TxPoolActor))
+	actor.SetTxPid(txpool.GetPID(tc.TxActor))
+	log.Info("TxPool init success")
+	return txpool
 }
 
-func initP2PNode(ctx *cli.Context, txpoolSvr *proc.TXPoolServer, acct *account.Account) (*p2pserver.P2PServer, p2p.P2P, error) {
-	if config.DefConfig.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
-		return nil, nil, nil
+func run(ctx *cli.Context) {
+	initLog(ctx)
+	setMaxOpenFiles()
+	cfg := initNodeConfig(ctx)
+	scfg := initServerConfig(ctx)
+	if cliBool(ctx, validateStoreFlag) {
+		runValidateStore(cfg, scfg)
+	} else if cliBool(ctx, offlineFlag) {
+		runOffline(ctx, cfg, scfg)
+	} else {
+		runOnline(ctx, cfg, scfg)
 	}
-	p2p, err := p2pserver.NewServer(acct)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	err = p2p.Start()
-	if err != nil {
-		return nil, nil, fmt.Errorf("p2p service start error %s", err)
-	}
-	netreqactor.SetTxnPoolPid(txpoolSvr.GetPID(tc.TxActor))
-	txpoolSvr.Net = p2p.GetNetwork()
-	hserver.SetNetServer(p2p.GetNetwork())
-	p2p.WaitForPeersStart()
-	log.Infof("P2P init success")
-	return p2p, p2p.GetNetwork(), nil
 }
 
-func initConsensus(ctx *cli.Context, net p2p.P2P, txpoolSvr *proc.TXPoolServer, acc *account.Account) (consensus.ConsensusService, error) {
-	if !config.DefConfig.Consensus.EnableConsensus {
-		return nil, nil
-	}
-	pool := txpoolSvr.GetPID(tc.TxPoolActor)
-
-	consensusType := strings.ToLower(config.DefConfig.Genesis.ConsensusType)
-	consensusService, err := consensus.NewConsensusService(consensusType, acc, pool, nil, net)
-	if err != nil {
-		return nil, fmt.Errorf("NewConsensusService %s error: %s", consensusType, err)
-	}
-	consensusService.Start()
-
-	netreqactor.SetConsensusPid(consensusService.GetPID())
-	hserver.SetConsensusPid(consensusService.GetPID())
-
-	log.Infof("Consensus init success")
-	return consensusService, nil
+func runOffline(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig) {
+	initServer(ctx, cfg, scfg, &p2pserver.P2PServer{}, true)
+	select {}
 }
 
-func initRpc(ctx *cli.Context) error {
-	if !config.DefConfig.Rpc.EnableHttpJsonRpc {
-		return nil
-	}
-	var err error
-	exitCh := make(chan interface{}, 0)
-	go func() {
-		err = jsonrpc.StartRPCServer()
-		close(exitCh)
-	}()
-
-	flag := false
-	select {
-	case <-exitCh:
-		if !flag {
-			return err
-		}
-	case <-time.After(time.Millisecond * 5):
-		flag = true
-	}
-	log.Infof("Rpc init success")
-	return nil
-}
-
-func initLocalRpc(ctx *cli.Context) error {
-	if !ctx.GlobalBool(utils.GetFlagName(utils.RPCLocalEnableFlag)) {
-		return nil
-	}
-	var err error
-	exitCh := make(chan interface{}, 0)
-	go func() {
-		err = localrpc.StartLocalServer()
-		close(exitCh)
-	}()
-
-	flag := false
-	select {
-	case <-exitCh:
-		if !flag {
-			return err
-		}
-	case <-time.After(time.Millisecond * 5):
-		flag = true
-	}
-
-	log.Infof("Local rpc init success")
-	return nil
-}
-
-//start rosetta-node restful
-
-func initRosettaRestful(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) (*store.Store, error) {
-	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName+"/accstore")
-	store, err := store.NewStore(dbDir)
-	if err != nil {
-		log.Error("newStore err:%s", err)
-		return nil, err
-	}
-	var errmsg error
-	exitCh := make(chan interface{}, 0)
-	go func() {
-		errmsg = services.NewService(rconfig.Conf.Rosetta.Port, p2pSvr, store)
-		close(exitCh)
-	}()
-
-	flag := false
-	select {
-	case <-exitCh:
-		if !flag {
-			log.Errorf("Rosetta Restful init failed:%s", errmsg)
-			return store, errmsg
-		}
-	case <-time.After(time.Millisecond * 5):
-		flag = true
-	}
-	waitTime := cfg.Conf.Rosetta.BlockWaitTime
-	if err := service.GetBlockHeight(store, waitTime); err != nil {
-		return store, err
-	}
-	log.Infof("Rosetta Restful init success port:%d", rconfig.Conf.Rosetta.Port)
-	return store, nil
-}
-
-func initRestful(ctx *cli.Context) {
-	if !config.DefConfig.Restful.EnableHttpRestful {
-		return
-	}
-	go restful.StartServer()
-
-	log.Infof("Restful init success")
-}
-
-func initWs(ctx *cli.Context) {
-	if !config.DefConfig.Ws.EnableHttpWs {
-		return
-	}
-	websocket.StartServer()
-
-	log.Infof("Ws init success")
-}
-
-func initNodeInfo(ctx *cli.Context, p2pSvr *p2pserver.P2PServer) {
-	if config.DefConfig.P2PNode.HttpInfoPort == 0 {
-		return
-	}
-	go nodeinfo.StartServer(p2pSvr.GetNetwork())
-
-	log.Infof("Nodeinfo init success")
-}
-
-func logCurrBlockHeight() {
+func runOnline(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig) {
+	ldg := initLedger(ctx, cfg)
+	txpool := initTxPool(ctx)
+	node := initNode(ctx, cfg, txpool)
+	initServer(ctx, cfg, scfg, node, false)
 	ticker := time.NewTicker(config.DEFAULT_GEN_BLOCK_TIME * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			log.Infof("CurrentBlockHeight = %d", ledger.DefLedger.GetCurrentBlockHeight())
-			log.CheckRotateLogFile()
+	for range ticker.C {
+		log.Infof("CurrentBlockHeight = %d", ldg.GetCurrentBlockHeight())
+		if !disableLogFile {
+			nodelog.CheckRotateLogFile()
 		}
 	}
+}
+
+func runValidateStore(cfg *config.OntologyConfig, scfg *serverConfig) {
+	ctx := context.Background()
+	store := initStore(cfg, scfg, false)
+	log.Info("Started indexing any missing blocks")
+	store.IndexBlocks(ctx, services.IndexConfig{
+		ExitEarly: true,
+		WaitTime:  scfg.waitTime,
+	})
+	log.Info("Finished indexing blocks")
 }
 
 func setMaxOpenFiles() {
 	max, err := fdlimit.Maximum()
 	if err != nil {
-		log.Errorf("failed to get maximum open files: %v", err)
+		log.Errorf("Failed to get fdlimit: %s", err)
 		return
 	}
 	_, err = fdlimit.Raise(uint64(max))
 	if err != nil {
-		log.Errorf("failed to set maximum open files: %v", err)
+		log.Errorf("Failed to raise fdlimit: %s", err)
 		return
 	}
 }
 
-func waitToExit(db *ledger.Ledger, store *store.Store) {
-	exit := make(chan bool, 0)
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	go func() {
-		for sig := range sc {
-			log.Infof("Rosetta received exit signal: %v.", sig.String())
-			log.Infof("closing ledger,accstore...")
-			db.Close()
-			store.Close()
-			close(exit)
-			break
-		}
-	}()
-	<-exit
+func main() {
+	if err := setupApp().Run(os.Args); err != nil {
+		cmd.PrintErrorMsg(err.Error())
+		os.Exit(1)
+	}
 }

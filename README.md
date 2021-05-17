@@ -17,45 +17,42 @@ make docker
 
 ## Running docker image
 
-There are two volumens to mount into the ontology-rosetta container, one is for saving blocks, the other is for config file.
+There are two volumes to mount into the ontology-rosetta container, one is for saving blocks, the other is for the config file.
 
 ```sh
 # please make sure you have enough disk space for Chain dir
 mkdir Chain
 # you are using the default config in this repo
-docker run --name ont-rosetta -d -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
+docker run --name ont-rosetta -d -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath server-config.json):/data/server-config.json -p 9090:8080 ontology-rosetta:latest
 ```
-If you want to connect to testnet, set env NETWORK\_ID value to 2.
+If you want to connect to testnet, set env `NETWORK_ID` value to `2`.
 ```sh
-docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath rosetta-config.json):/data/rosetta-config.json -p 9090:8080 ontology-rosetta:latest
+docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath server-config.json):/data/server-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 
 ## How to use
 
 ### configuration
 
-The default configuration file is rosetta-config.json
+The default configuration file is `server-config.json`:
 
 ```json
 {
-  "rosetta":{
-    "version": "1.4.0",
-    "port": 8080,
-    "block_wait_time": 1
-  },
-
-  "monitorOEP4ScriptHash": []
-
+    "block_wait_seconds": 1,
+    "oep4_tokens": [],
+    "port": 8080
 }
 ```
 
-* rosetta
-  * version : rosetta sdk version
-  * port: rosetta restful api port
-  * block_wait_time : rosetta compute historical balance block wait time
-* monitorOEP4ScriptHash:
-  * OEP4 token codehash to monitor
+Objects within the `oep4_tokens` array must follow this structure:
 
+```json
+{
+    "contract": "ff31ec74d01f7b7d45ed2add930f5d2239f7de33",
+    "decimals": 9,
+    "symbol": "WING"
+}
+```
 
 ## Restful API
 
@@ -83,7 +80,7 @@ Sample
 {
     "network_identifiers": [
         {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         }
     ]
@@ -101,7 +98,7 @@ Use the available "network_identifier" from /network/list
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         }
 
@@ -256,7 +253,7 @@ Use the available "network_identifier" from /network/list
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         }
 
@@ -317,7 +314,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
     "account_identifier": {
@@ -359,7 +356,7 @@ Sample:
                 "decimals": 9,
                 "metadata": {
                     "ContractAddress": "0200000000000000000000000000000000000000",
-                    "TokenType": "Utility Token"
+                    "TokenType": "Gas Token"
                 }
             }
         }
@@ -380,7 +377,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
     "block_identifier": {
@@ -493,7 +490,7 @@ ONG:
                                 "decimals": 9,
                                 "metadata": {
                                     "ContractAddress": "0200000000000000000000000000000000000000",
-                                    "TokenType": "Utility Token"
+                                    "TokenType": "Gas Token"
                                 }
                             }
 ```
@@ -509,7 +506,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
     "block_identifier": {
@@ -599,7 +596,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
     "public_key":{
@@ -638,7 +635,7 @@ Request:
 ```json
 {
     "network_identifier": {
-        "blockchain": "ont",
+        "blockchain": "ontology",
         "network": "privatenet"
     },
     "operations": [
@@ -727,7 +724,7 @@ Request:
 ```json
 {
     "network_identifier": {
-        "blockchain": "ont",
+        "blockchain": "ontology",
         "network": "privatenet"
     },
     "options": {
@@ -765,7 +762,7 @@ Request:
 ```json
 {
     "network_identifier": {
-        "blockchain": "ont",
+        "blockchain": "ontology",
         "network": "privatenet"
     },
     "operations": [
@@ -858,7 +855,7 @@ Request:
 ```json
 {
     "network_identifier": {
-        "blockchain": "ont",
+        "blockchain": "ontology",
         "network": "privatenet"
     },
     "signed":false,
@@ -943,7 +940,7 @@ Request:
 ```json
 {
 	    "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "testnet"
         },
         "unsigned_transaction":"00d1594606d2c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
@@ -998,7 +995,7 @@ Request:
 ```json
 {
     "network_identifier": {
-        "blockchain": "ont",
+        "blockchain": "ontology",
         "network": "privatenet"
     },
     "signed_transaction":"00d1458813d9c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b6500024140cb1e23e46a7e8e01563c64d7b5d9bf8022f549d411487156d55403ec7213f6cec49d413631d841852e493dca27e746977ea2ddd9e69906b8db7e71c3e15f7407232102263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaaeac41409d15ed0d27224caecb55207b002f4a57846423bbe26764307e29704abfe4b327710c449531ac0f9ef621d864eab93a2ef373d2bc33027873c9466a30e748145f232103944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7ac"
@@ -1027,7 +1024,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
      "signed_transaction": "<signed tx hex>"
@@ -1059,7 +1056,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         }
 }
@@ -1088,7 +1085,7 @@ Request:
 ```json
 {
     "network_identifier":  {
-            "blockchain": "ont",
+            "blockchain": "ontology",
             "network": "mainnet"
         },
     "transaction_identifier": {

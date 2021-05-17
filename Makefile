@@ -38,3 +38,6 @@ clean:
 	rm -rf *.8 *.o *.out *.6 *exe coverage
 	rm -rf rosetta-node rosetta-node-*
 
+proto:
+	@echo ">> Generating model/model.pb.go"
+	@protoc --proto_path=model --go_out=model --go_opt=paths=source_relative model/model.proto
