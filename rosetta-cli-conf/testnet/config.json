@@ -1,0 +1,15 @@
+{
+    "network": {
+        "blockchain": "ontology",
+        "network": "testnet"
+    },
+    "online_url": "http://localhost:8080",
+    "data_directory": "data",
+    "data": {
+        "historical_balance_enabled": true,
+        "end_conditions": {
+            "tip": true
+        }
+    },
+    "tip_delay": 30
+}

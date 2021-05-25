@@ -16,7 +16,8 @@
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package common
+// Package log provides a minimal logging framework.
+package log
 
 import (
 	"bytes"
@@ -31,6 +32,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ontio/ontology-rosetta/process"
 )
 
 const (
@@ -69,11 +72,10 @@ var (
 )
 
 const (
-	NAME_PREFIX          = "LEVEL"
-	CALL_DEPTH           = 2
-	DEFAULT_MAX_LOG_SIZE = 20
-	BYTE_TO_MB           = 1024 * 1024
-	PATH                 = "./Log/"
+	namePrefix = "LEVEL"
+	callDepth  = 2
+	maxLogSize = 20
+	megabyte   = 1024 * 1024
 )
 
 func GetGID() uint64 {
@@ -96,7 +98,7 @@ func LevelName(level int) string {
 	if name, ok := levels[level]; ok {
 		return name
 	}
-	return NAME_PREFIX + strconv.Itoa(level)
+	return namePrefix + strconv.Itoa(level)
 }
 
 func NameLevel(name string) int {
@@ -106,8 +108,8 @@ func NameLevel(name string) int {
 		}
 	}
 	var level int
-	if strings.HasPrefix(name, NAME_PREFIX) {
-		level, _ = strconv.Atoi(name[len(NAME_PREFIX):])
+	if strings.HasPrefix(name, namePrefix) {
+		level, _ = strconv.Atoi(name[len(namePrefix):])
 	}
 	return level
 }
@@ -128,7 +130,7 @@ func New(out io.Writer, prefix string, flag, level int, file *os.File) *Logger {
 
 func (l *Logger) SetDebugLevel(level int) error {
 	if level > MaxLevelLog || level < 0 {
-		return errors.New("Invalid Debug Level")
+		return errors.New("invalid debug level")
 	}
 
 	l.level = level
@@ -143,7 +145,7 @@ func (l *Logger) Output(level int, a ...interface{}) error {
 		a = append([]interface{}{LevelName(level), "GID",
 			gidStr + ","}, a...)
 
-		return l.logger.Output(CALL_DEPTH, fmt.Sprintln(a...))
+		return l.logger.Output(callDepth, fmt.Sprintln(a...))
 	}
 	return nil
 }
@@ -154,7 +156,7 @@ func (l *Logger) Outputf(level int, format string, v ...interface{}) error {
 		v = append([]interface{}{LevelName(level), "GID",
 			gid}, v...)
 
-		return l.logger.Output(CALL_DEPTH, fmt.Sprintf("%s %s %d, "+format+"\n", v...))
+		return l.logger.Output(callDepth, fmt.Sprintf("%s %s %d, "+format+"\n", v...))
 	}
 	return nil
 }
@@ -191,6 +193,10 @@ func (l *Logger) Warnf(format string, a ...interface{}) {
 	l.Outputf(WarnLog, format, a...)
 }
 
+func (l *Logger) Warningf(format string, a ...interface{}) {
+	l.Outputf(WarnLog, format, a...)
+}
+
 func (l *Logger) Error(a ...interface{}) {
 	l.Output(ErrorLog, a...)
 }
@@ -201,10 +207,12 @@ func (l *Logger) Errorf(format string, a ...interface{}) {
 
 func (l *Logger) Fatal(a ...interface{}) {
 	l.Output(FatalLog, a...)
+	process.Exit(1)
 }
 
 func (l *Logger) Fatalf(format string, a ...interface{}) {
 	l.Outputf(FatalLog, format, a...)
+	process.Exit(1)
 }
 
 func Trace(a ...interface{}) {
@@ -312,6 +320,7 @@ func Fatalf(format string, a ...interface{}) {
 }
 
 // used for develop stage and not allowed in production enforced by CI
+
 var Test = Fatal
 var Testf = Fatalf
 
@@ -351,16 +360,16 @@ func InitLog(logLevel int, a ...interface{}) {
 		writers = append(writers, ioutil.Discard)
 	} else {
 		for _, o := range a {
-			switch o.(type) {
+			switch o := o.(type) {
 			case string:
-				logFile, err = FileOpen(o.(string))
+				logFile, err = FileOpen(o)
 				if err != nil {
 					fmt.Println("error: open log file failed")
 					os.Exit(1)
 				}
 				writers = append(writers, logFile)
 			case *os.File:
-				writers = append(writers, o.(*os.File))
+				writers = append(writers, o)
 			default:
 				fmt.Println("error: invalid log location")
 				os.Exit(1)
@@ -381,9 +390,9 @@ func GetLogFileSize() (int64, error) {
 
 func GetMaxLogChangeInterval(maxLogSize int64) int64 {
 	if maxLogSize != 0 {
-		return maxLogSize * BYTE_TO_MB
+		return maxLogSize * megabyte
 	} else {
-		return DEFAULT_MAX_LOG_SIZE * BYTE_TO_MB
+		return maxLogSize * megabyte
 	}
 }
 

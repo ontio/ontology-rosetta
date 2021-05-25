@@ -1,0 +1,11 @@
+{
+    "block_wait_seconds": 1,
+    "oep4_tokens": [
+        {
+            "contract": "ff31ec74d01f7b7d45ed2add930f5d2239f7de33",
+            "decimals": 9,
+            "symbol": "WING"
+        }
+    ],
+    "port": 8080
+}

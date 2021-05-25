@@ -15,10 +15,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package utils
+
+package chain
 
 import (
 	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"github.com/ontio/ontology/common"
@@ -35,15 +37,16 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("oep4 transfer: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
 	contractAddr, _ := common.AddressFromBase58("AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK")
-	spender, _ := common.AddressFromBase58("AVpuXX3mZbjbqJ16weWzbkABxuTRuGiXbf")
+	payer, _ := common.AddressFromBase58("AVpuXX3mZbjbqJ16weWzbkABxuTRuGiXbf")
 	from, _ := common.AddressFromBase58("ASUpHyd8hsTMxKT7pCdPf1dYCZUvov2rk5")
 	to, _ := common.AddressFromBase58("AYZ14K5FJKXC9mzS5YFfdr52E6seBqAPPU")
-	amount := uint64(18289182)
+	value := int64(18289182)
+	amount := big.NewInt(18289182)
 	oep4TransferFromPayload, err := utils.BuildNeoVMInvokeCode(contractAddr, []interface{}{"transferFrom",
-		[]interface{}{spender, from, to, amount}})
+		[]interface{}{payer, from, to, amount}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,17 +57,17 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("oep4 transferFrom: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
-	type multiTransferState struct {
-		From  common.Address
-		To    common.Address
-		Value uint64
+	type multiTransfer struct {
+		From   common.Address
+		To     common.Address
+		Amount *big.Int
 	}
-	multiTransferParam := []*multiTransferState{
-		{From: from, To: to, Value: amount},
-		{From: from, To: to, Value: amount + 2},
-		{From: from, To: to, Value: amount + 3},
+	multiTransferParam := []*multiTransfer{
+		{From: from, To: to, Amount: big.NewInt(value)},
+		{From: from, To: to, Amount: big.NewInt(value + 2)},
+		{From: from, To: to, Amount: big.NewInt(value + 3)},
 	}
 	oep4TransferMultiPayload, err := utils.BuildNeoVMInvokeCode(contractAddr, []interface{}{"transferMulti",
 		[]interface{}{multiTransferParam}})
@@ -78,7 +81,7 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("oep4 transfer multi: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
 	// https://explorer.ont.io/transaction/2c5d95e532aad1c2d59d6544e5828202a56a61f63c9e2fd098c6c26f86b20d66
 	ontTransferPayload, _ := hex.DecodeString("00c66b1473e1e106a810f63501c4399dd58cba2f363eabba6a7cc8145f32857a94" +
@@ -90,7 +93,7 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("ont transfer: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
 	ontTransferPayload, _ = utils.BuildNativeInvokeCode(contractAddr, 00, "transfer",
 		[]interface{}{multiTransferParam})
@@ -100,13 +103,13 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("ont trasnfer multi: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
-	transferFrom := &TransferState{
-		Spender: spender,
-		To:      to,
-		From:    from,
-		Value:   amount,
+	transferFrom := &Transfer{
+		Amount: big.NewInt(value),
+		From:   from,
+		Payer:  payer,
+		To:     to,
 	}
 	ontTransferFromPayload, err := utils.BuildNativeInvokeCode(contractAddr, 00, "transferFrom",
 		[]interface{}{transferFrom})
@@ -120,6 +123,6 @@ func TestParsePayload(t *testing.T) {
 	}
 	for _, state := range states {
 		t.Logf("ont transferFrom: contract %s, from %s, to %s, amount %d",
-			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Value)
+			contract.ToHexString(), state.From.ToBase58(), state.To.ToBase58(), state.Amount)
 	}
 }

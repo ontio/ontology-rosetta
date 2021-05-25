@@ -1,0 +1,34 @@
+syntax = "proto3";
+package model;
+
+option go_package = "github.com/ontio/ontology-rosetta/model";
+
+message Block {
+    uint32 timestamp = 1;
+    repeated Transaction transactions = 2;
+}
+
+message ConstructOptions {
+    bytes amount = 1;
+    bytes contract = 2;
+    bytes from = 3;
+    uint64 gas_limit = 4;
+    uint64 gas_price = 5;
+    uint32 nonce = 6;
+    bytes payer = 7;
+    bytes to = 8;
+}
+
+message Transaction {
+    bool failed = 1;
+    bytes hash = 2;
+    repeated Transfer transfers = 3;
+}
+
+message Transfer {
+    bytes amount = 1;
+    bytes contract = 2;
+    bytes from = 3;
+    bool is_gas = 4;
+    bytes to = 5;
+}
