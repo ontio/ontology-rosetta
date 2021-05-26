@@ -180,9 +180,10 @@ func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 func initLog(ctx *cli.Context) {
 	disableLogFile = cliBool(ctx, utils.DisableLogFileFlag)
 	level := ctx.GlobalInt(utils.GetFlagName(utils.LogLevelFlag))
-	log.InitLog(level, log.Stdout)
+	log.InitLog(level, os.Stdout)
 	if disableLogFile {
-		nodelog.InitLog(level, nodelog.Stdout)
+		eventbus.InitLogWriter(os.Stdout)
+		nodelog.InitLog(level, os.Stdout)
 	} else {
 		dir := ctx.GlobalString(utils.GetFlagName(utils.LogDirFlag))
 		dir = filepath.Join(dir, "") + string(os.PathSeparator)
