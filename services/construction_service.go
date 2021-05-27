@@ -21,6 +21,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -31,21 +32,18 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology-crypto/keypair"
+	"github.com/ontio/ontology-crypto/signature"
 	"github.com/ontio/ontology-rosetta/chain"
 	"github.com/ontio/ontology-rosetta/log"
 	"github.com/ontio/ontology-rosetta/model"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/payload"
-	"github.com/ontio/ontology/core/signature"
 	ctypes "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/core/utils"
 	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/http/base/actor"
 	"google.golang.org/protobuf/proto"
 )
-
-// TODO(tav): Figure out whether to include the sub account in account
-// identifiers.
 
 // ConstructionCombine implements the /construction/combine endpoint.
 func (s *service) ConstructionCombine(ctx context.Context, r *types.ConstructionCombineRequest) (*types.ConstructionCombineResponse, *types.Error) {
@@ -63,42 +61,76 @@ func (s *service) ConstructionCombine(ctx context.Context, r *types.Construction
 			fmt.Errorf("services: unexpected signature found in unsigned transaction"),
 		)
 	}
-	sigs := r.Signatures
-	if len(sigs) == 0 {
+	if len(r.Signatures) == 0 {
 		return nil, errInvalidSignature
 	}
+	hash := mut.Hash()
 	// TODO(ZhouPW): How should we handle the multi-sig address case?
-	for _, sig := range sigs {
+	for _, sig := range r.Signatures {
 		if sig.PublicKey == nil {
 			return nil, errInvalidPublicKey
 		}
-		if len(sig.PublicKey.Bytes) < 1 {
-			return nil, errInvalidPublicKey
+		if sig.PublicKey.CurveType != types.Edwards25519 {
+			return nil, wrapErr(
+				errInvalidPublicKey,
+				fmt.Errorf("services: unsupported key type: %q", sig.PublicKey.CurveType),
+			)
 		}
-		// NOTE(tav): We don't currently validate the key/signature types.
-		pk, err := keypair.DeserializePublicKey(sig.PublicKey.Bytes)
-		if err != nil {
-			return nil, errInvalidPublicKey
+		if len(sig.PublicKey.Bytes) != ed25519.PublicKeySize {
+			return nil, wrapErr(
+				errInvalidPublicKey,
+				fmt.Errorf(
+					"services: invalid length for ed25519 public key: %d",
+					len(sig.PublicKey.Bytes),
+				),
+			)
+		}
+		key := ed25519.PublicKey(sig.PublicKey.Bytes)
+		if sig.SignatureType != types.Ed25519 {
+			return nil, wrapErr(
+				errInvalidSignature,
+				fmt.Errorf(
+					"services: unsupported signature type: %q",
+					sig.SigningPayload.SignatureType,
+				),
+			)
 		}
 		if sig.SigningPayload == nil {
+			return nil, wrapErr(
+				errInvalidSignature,
+				fmt.Errorf("services: signing_payload missing"),
+			)
+		}
+		if !bytes.Equal(sig.SigningPayload.Bytes, hash[:]) {
+			return nil, wrapErr(
+				errInvalidSignature,
+				fmt.Errorf(
+					"services: mismatching signing_payload.hex_bytes and transaction hash",
+				),
+			)
+		}
+		if !ed25519.Verify(key, sig.SigningPayload.Bytes, sig.Bytes) {
 			return nil, errInvalidSignature
 		}
-		err = signature.Verify(pk, sig.SigningPayload.Bytes, sig.Bytes)
+		osig, err := signature.Serialize(&signature.Signature{
+			Scheme: signature.SHA512withEDDSA,
+			Value:  sig.Bytes,
+		})
 		if err != nil {
 			return nil, wrapErr(errInvalidSignature, err)
 		}
 		mut.Sigs = append(mut.Sigs, ctypes.Sig{
 			M:       1,
-			PubKeys: []keypair.PublicKey{pk},
-			SigData: [][]byte{sig.Bytes},
+			PubKeys: []keypair.PublicKey{key},
+			SigData: [][]byte{osig},
 		})
 	}
 	txn, err = mut.IntoImmutable()
 	if err != nil {
 		return nil, wrapErr(errInternal, err)
 	}
-	sink := common.ZeroCopySink{}
-	txn.Serialization(&sink)
+	sink := &common.ZeroCopySink{}
+	txn.Serialization(sink)
 	return &types.ConstructionCombineResponse{
 		SignedTransaction: hex.EncodeToString(sink.Bytes()),
 	}, nil
@@ -109,14 +141,43 @@ func (s *service) ConstructionDerive(ctx context.Context, r *types.ConstructionD
 	if r.PublicKey == nil {
 		return nil, errInvalidPublicKey
 	}
-	pk, err := keypair.DeserializePublicKey(r.PublicKey.Bytes)
-	if err != nil {
-		return nil, errInvalidPublicKey
+	var key keypair.PublicKey
+	switch r.PublicKey.CurveType {
+	case types.Edwards25519:
+		if len(r.PublicKey.Bytes) != ed25519.PublicKeySize {
+			return nil, wrapErr(
+				errInvalidPublicKey,
+				fmt.Errorf(
+					"services: invalid length for an ed25519 key: %d",
+					len(r.PublicKey.Bytes),
+				),
+			)
+		}
+		key = ed25519.PublicKey(r.PublicKey.Bytes)
+	default:
+		return nil, wrapErr(
+			errInvalidPublicKey,
+			fmt.Errorf("services: unsupported key type: %s", r.PublicKey.CurveType),
+		)
 	}
-	addr := ctypes.AddressFromPubKey(pk)
+	addr := ctypes.AddressFromPubKey(key)
+	contract, xerr := s.getContract((r.Metadata))
+	if xerr != nil {
+		return nil, xerr
+	}
+	if contract == "" {
+		return &types.ConstructionDeriveResponse{
+			AccountIdentifier: &types.AccountIdentifier{
+				Address: addr.ToBase58(),
+			},
+		}, nil
+	}
 	return &types.ConstructionDeriveResponse{
 		AccountIdentifier: &types.AccountIdentifier{
 			Address: addr.ToBase58(),
+			SubAccount: &types.SubAccountIdentifier{
+				Address: contract,
+			},
 		},
 	}, nil
 }
@@ -162,7 +223,7 @@ func (s *service) ConstructionMetadata(ctx context.Context, r *types.Constructio
 			if err != nil {
 				return nil, wrapErr(errInvalidConstructOptions, err)
 			}
-			exists, xerr := s.store.checkTxHash(txn.Hash())
+			exists, xerr := s.store.checkUnsignedTxHash(txn.Hash())
 			if xerr != nil {
 				return nil, xerr
 			}
@@ -178,7 +239,7 @@ func (s *service) ConstructionMetadata(ctx context.Context, r *types.Constructio
 		if err != nil {
 			return nil, wrapErr(errInvalidConstructOptions, err)
 		}
-		exists, xerr := s.store.checkTxHash(txn.Hash())
+		exists, xerr := s.store.checkUnsignedTxHash(txn.Hash())
 		if xerr != nil {
 			return nil, xerr
 		}
@@ -186,12 +247,13 @@ func (s *service) ConstructionMetadata(ctx context.Context, r *types.Constructio
 			return nil, wrapErr(
 				errInvalidNonce,
 				fmt.Errorf(
-					"a transaction already exists with the same hash for nonce %d",
+					"a conflicting transaction hash already exists for nonce %d",
 					opts.Nonce,
 				),
 			)
 		}
 	}
+	log.Infof("Metadata opts: %s", opts)
 	enc, err := proto.Marshal(opts)
 	if err != nil {
 		return nil, wrapErr(errProtobuf, err)
@@ -209,7 +271,7 @@ func (s *service) ConstructionParse(ctx context.Context, r *types.ConstructionPa
 	if xerr != nil {
 		return nil, xerr
 	}
-	ops, xerr := s.parsePayload(txn.Payload)
+	ops, cinfo, xerr := s.parsePayload(txn.Payload)
 	if xerr != nil {
 		return nil, xerr
 	}
@@ -230,26 +292,51 @@ func (s *service) ConstructionParse(ctx context.Context, r *types.ConstructionPa
 	}
 	var signers []*types.AccountIdentifier
 	if r.Signed {
-		acct := ops[0].Account
-		signers = append(signers, acct)
-		if acct.Address != txn.Payer.ToBase58() {
-			payer := *acct
-			payer.Address = txn.Payer.ToBase58()
-			signers = append(signers, &payer)
+		if len(txn.Sigs) == 0 {
+			return nil, wrapErr(
+				errInvalidTransactionPayload,
+				fmt.Errorf("services: signature(s) not present in signed transaction data"),
+			)
 		}
-	}
-	enc, err := proto.Marshal(&model.ConstructOptions{
-		GasLimit: txn.GasLimit,
-		GasPrice: txn.GasPrice,
-		Payer:    txn.Payer[:],
-	})
-	if err != nil {
-		return nil, wrapErr(errProtobuf, err)
+		for _, raw := range txn.Sigs {
+			sig, err := raw.GetSig()
+			if err != nil {
+				return nil, wrapErr(
+					errInvalidTransactionPayload,
+					fmt.Errorf(
+						"services: failed to get signature from transaction data: %s",
+						err,
+					),
+				)
+			}
+			if len(sig.PubKeys) != 1 {
+				return nil, wrapErr(
+					errInvalidTransactionPayload,
+					fmt.Errorf(
+						"services: unexpected number of signatures in transaction data: %d",
+						len(sig.PubKeys),
+					),
+				)
+			}
+			addr := ctypes.AddressFromPubKey(sig.PubKeys[0])
+			acct := &types.AccountIdentifier{
+				Address: addr.ToBase58(),
+			}
+			if !cinfo.isNative() {
+				acct.SubAccount = &types.SubAccountIdentifier{
+					Address: cinfo.contract.ToHexString(),
+				}
+			}
+			signers = append(signers, acct)
+		}
 	}
 	return &types.ConstructionParseResponse{
 		AccountIdentifierSigners: signers,
 		Metadata: map[string]interface{}{
-			"protobuf": enc,
+			"gas_limit": txn.GasLimit,
+			"gas_price": txn.GasPrice,
+			"nonce":     txn.Nonce,
+			"payer":     txn.Payer.ToBase58(),
 		},
 		Operations: ops,
 	}, nil
@@ -269,13 +356,13 @@ func (s *service) ConstructionPayloads(ctx context.Context, r *types.Constructio
 		return nil, invalidConstructf("amount does not match value from operations")
 	}
 	if !bytes.Equal(opts.Contract, xfer.contract[:]) {
-		return nil, invalidConstructf("amount does not match value from operations")
+		return nil, invalidConstructf("contract does not match value from operations")
 	}
 	if !bytes.Equal(opts.From, xfer.from[:]) {
-		return nil, invalidConstructf("amount does not match value from operations")
+		return nil, invalidConstructf("from field does not match value from operations")
 	}
 	if !bytes.Equal(opts.To, xfer.to[:]) {
-		return nil, invalidConstructf("amount does not match value from operations")
+		return nil, invalidConstructf("to field does not match value from operations")
 	}
 	txn, err := s.constructTransfer(opts)
 	if err != nil {
@@ -295,6 +382,7 @@ func (s *service) ConstructionPayloads(ctx context.Context, r *types.Constructio
 	payloads := []*types.SigningPayload{{
 		AccountIdentifier: acct,
 		Bytes:             hash[:],
+		SignatureType:     types.Ed25519,
 	}}
 	if txn.Payer != xfer.from {
 		payer := *acct
@@ -302,6 +390,7 @@ func (s *service) ConstructionPayloads(ctx context.Context, r *types.Constructio
 		payloads = append(payloads, &types.SigningPayload{
 			AccountIdentifier: &payer,
 			Bytes:             hash[:],
+			SignatureType:     types.Ed25519,
 		})
 	}
 	return &types.ConstructionPayloadsResponse{
@@ -344,10 +433,10 @@ func (s *service) ConstructionPreprocess(ctx context.Context, r *types.Construct
 	if xerr != nil {
 		return nil, xerr
 	}
-	if payer != common.ADDRESS_EMPTY {
+	if payer == common.ADDRESS_EMPTY {
 		payer = xfer.from
 	}
-	enc, err := proto.Marshal(&model.ConstructOptions{
+	opts := &model.ConstructOptions{
 		Amount:   xfer.amount.Bytes(),
 		Contract: xfer.contract[:],
 		From:     xfer.from[:],
@@ -356,7 +445,9 @@ func (s *service) ConstructionPreprocess(ctx context.Context, r *types.Construct
 		Nonce:    uint32(nonce),
 		Payer:    payer[:],
 		To:       xfer.to[:],
-	})
+	}
+	log.Infof("Preprocess opts: %s", opts)
+	enc, err := proto.Marshal(opts)
 	if err != nil {
 		return nil, wrapErr(errProtobuf, err)
 	}
@@ -378,7 +469,7 @@ func (s *service) ConstructionSubmit(ctx context.Context, r *types.ConstructionS
 	}
 	if err, desc := actor.AppendTxToPool(txn); err != errors.ErrNoError {
 		log.Errorf("Failed to broadcast transaction: %s (%s)", err, desc)
-		return nil, wrapErr(errBroadcastFailed, err)
+		return nil, wrapErr(errBroadcastFailed, fmt.Errorf("%s: %s", err, desc))
 	}
 	return txhash2response(txn.Hash())
 }
@@ -400,18 +491,44 @@ func (s *service) constructTransfer(opts *model.ConstructOptions) (*ctypes.Trans
 	if err != nil {
 		return nil, err
 	}
-	// TODO(tav): Check whether the params need to be nested, e.g. for native vs
-	// OEP4 contracts.
-	code, err := utils.BuildNativeInvokeCode(
-		contract,
-		0,
-		"transfer",
-		[]interface{}{from, to, (&big.Int{}).SetBytes(opts.Amount)},
-	)
+	cinfo, xerr := s.store.getCurrencyInfo(contract)
+	if xerr != nil {
+		return nil, fmt.Errorf(
+			"services: unable to find currency info for %s",
+			contract.ToHexString(),
+		)
+	}
+	amount := (&big.Int{}).SetBytes(opts.Amount)
+	typ := ctypes.InvokeNeo
+	var code []byte
+	if cinfo.isNative() {
+		params := []interface{}{struct {
+			From   common.Address
+			To     common.Address
+			Amount *big.Int
+		}{
+			From:   from,
+			To:     to,
+			Amount: amount,
+		}}
+		code, err = utils.BuildNativeInvokeCode(
+			contract, 0, "transfer", []interface{}{params},
+		)
+	} else if cinfo.wasm {
+		// TODO(tav): The params need to be verified for WASM contracts.
+		code, err = utils.BuildWasmVMInvokeCode(contract, []interface{}{
+			"transfer", []interface{}{from, to, amount},
+		})
+		typ = ctypes.InvokeWasm
+	} else {
+		// TODO(tav): The params need to be verified for Neo contracts.
+		code, err = utils.BuildNeoVMInvokeCode(contract, []interface{}{
+			"transfer", []interface{}{from, to, amount},
+		})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("services: unable to build transaction invoke code: %s", err)
 	}
-	// TODO(tav): Special case WASM contracts?
 	mut := &ctypes.MutableTransaction{
 		GasLimit: opts.GasLimit,
 		GasPrice: opts.GasPrice,
@@ -421,26 +538,58 @@ func (s *service) constructTransfer(opts *model.ConstructOptions) (*ctypes.Trans
 			Code: code,
 		},
 		Sigs:   []ctypes.Sig{},
-		TxType: ctypes.InvokeNeo,
+		TxType: typ,
 	}
 	return mut.IntoImmutable()
 }
 
-func (s *service) parsePayload(p ctypes.Payload) ([]*types.Operation, *types.Error) {
+func (s *service) getContract(md map[string]interface{}) (string, *types.Error) {
+	if md == nil {
+		return "", nil
+	}
+	val, ok := md["contract"]
+	if !ok {
+		return "", nil
+	}
+	raw, ok := val.(string)
+	if !ok {
+		return "", wrapErr(
+			errInvalidContractAddress,
+			fmt.Errorf(
+				"services: unexpected datatype for metadata.contract: %s",
+				reflect.TypeOf(val),
+			),
+		)
+	}
+	addr, err := common.AddressFromHexString(raw)
+	if err != nil {
+		return "", wrapErr(
+			errInvalidContractAddress,
+			fmt.Errorf("services: unable to parse metadata.contract: %s", err),
+		)
+	}
+	_, xerr := s.store.getCurrencyInfo(addr)
+	if xerr != nil {
+		return "", xerr
+	}
+	return addr.ToHexString(), nil
+}
+
+func (s *service) parsePayload(p ctypes.Payload) ([]*types.Operation, *currencyInfo, *types.Error) {
 	if p == nil {
-		return nil, errInvalidTransactionPayload
+		return nil, nil, errInvalidTransactionPayload
 	}
 	invoke, ok := p.(*payload.InvokeCode)
 	if !ok || invoke == nil {
-		return nil, errInvalidTransactionPayload
+		return nil, nil, errInvalidTransactionPayload
 	}
 	xfers, contract, err := chain.ParsePayload(invoke.Code)
 	if err != nil {
-		return nil, wrapErr(errInvalidTransactionPayload, err)
+		return nil, nil, wrapErr(errInvalidTransactionPayload, err)
 	}
 	info, xerr := s.store.getCurrencyInfo(contract)
 	if xerr != nil {
-		return nil, xerr
+		return nil, nil, xerr
 	}
 	ops := []*types.Operation{}
 	for _, xfer := range xfers {
@@ -450,9 +599,9 @@ func (s *service) parsePayload(p ctypes.Payload) ([]*types.Operation, *types.Err
 			currency: info.currency,
 			from:     xfer.From,
 			to:       xfer.To,
-		})
+		}, false)
 	}
-	return ops, nil
+	return ops, info, nil
 }
 
 // NOTE(tav): We currently only support a simple transfer of an asset from one
@@ -499,6 +648,12 @@ func (s *service) validateOps(ops []*types.Operation) (*transferInfo, *types.Err
 			return nil, xerr
 		}
 		if token.isNative() {
+			if op.Account.SubAccount != nil {
+				return nil, invalidOpsf(
+					"operations[%d].account.sub_account specified for native token", i,
+				)
+			}
+		} else {
 			if op.Account.SubAccount == nil {
 				return nil, invalidOpsf("missing operations[%d].account.sub_account", i)
 			}

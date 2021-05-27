@@ -41,6 +41,73 @@ func (b *Block) Format(f fmt.State, verb rune) {
 	}
 }
 
+func (c *ConstructOptions) Format(f fmt.State, verb rune) {
+	switch verb {
+	case 's':
+		fmt.Fprint(f, "{")
+		written := false
+		if len(c.Amount) > 0 {
+			amount := (&big.Int{}).SetBytes(c.Amount)
+			fmt.Fprint(f, "amount: ")
+			fmt.Fprint(f, amount.String())
+			written = true
+		}
+		if len(c.Contract) > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprint(f, "contract: ")
+			f.Write(hexaddr(c.Contract))
+			written = true
+		}
+		if len(c.From) > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprint(f, "from: ")
+			f.Write(hexaddr(c.From))
+			written = true
+		}
+		if c.GasLimit > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprintf(f, "gas_limit: %d", c.GasLimit)
+			written = true
+		}
+		if c.GasPrice > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprintf(f, "gas_price: %d", c.GasPrice)
+			written = true
+		}
+		if c.Nonce > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprintf(f, "nonce: %d", c.Nonce)
+			written = true
+		}
+		if len(c.Payer) > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprint(f, "payer: ")
+			f.Write(hexaddr(c.Payer))
+			written = true
+		}
+		if len(c.To) > 0 {
+			if written {
+				fmt.Fprint(f, ", ")
+			}
+			fmt.Fprint(f, "to: ")
+			f.Write(hexaddr(c.To))
+		}
+		fmt.Fprint(f, "}")
+	}
+}
+
 func (t *Transaction) Format(f fmt.State, verb rune) {
 	switch verb {
 	case 's':

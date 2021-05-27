@@ -120,7 +120,7 @@ func (s *service) BlockTransaction(ctx context.Context, r *types.BlockTransactio
 	return nil, errInvalidTransactionHash
 }
 
-func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo) []*types.Operation {
+func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, setStatus bool) []*types.Operation {
 	neg := (&big.Int{}).Neg(xfer.amount)
 	related := false
 	// NOTE(tav): We specify statusSuccess for all operations, assuming that
@@ -138,8 +138,10 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo) [
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: int64(len(ops)),
 			},
-			Status: &statusSuccess,
-			Type:   opTransfer,
+			Type: opTransfer,
+		}
+		if setStatus {
+			op.Status = &statusSuccess
 		}
 		if !xfer.isNative() {
 			op.Account.SubAccount = &types.SubAccountIdentifier{
@@ -164,8 +166,10 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo) [
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: int64(len(ops)),
 			},
-			Status: &statusSuccess,
-			Type:   opTransfer,
+			Type: opTransfer,
+		}
+		if setStatus {
+			op.Status = &statusSuccess
 		}
 		if !xfer.isNative() {
 			op.Account.SubAccount = &types.SubAccountIdentifier{
@@ -216,7 +220,7 @@ func (s *service) transformTransaction(txn *model.Transaction) (*types.Transacti
 			from:     from,
 			isGas:    xfer.IsGas,
 			to:       to,
-		})
+		}, true)
 	}
 	return &types.Transaction{
 		Operations: ops,

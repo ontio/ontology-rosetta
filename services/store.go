@@ -40,6 +40,7 @@ import (
 	"github.com/ontio/ontology/common/constants"
 	store "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/ledgerstore"
+	ctypes "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/http/base/actor"
 	"github.com/ontio/ontology/smartcontract/event"
 	"google.golang.org/protobuf/proto"
@@ -56,7 +57,7 @@ var (
 //            blockKey b<height-little-endian> = Block
 // blockHash2HeightKey c<block-hash> = <height-little-endian>
 // blockHeight2HashKey d<height-little-endian> = <block-hash>
-//          txnHashKey e<txn-hash> = <nil>
+//          txnHashKey e<unsigned-txn-hash> = <nil>
 //                     height = <height-little-endian>
 //
 // We compress some of the native contract addresses, e.g. ONT/ONG, to single
@@ -122,7 +123,10 @@ outer:
 				log.Errorf("Failed to get block at height %d: %s", height, err)
 				continue outer
 			}
-			var changes []*balanceChange
+			var (
+				changes []*balanceChange
+				hashes  [][]byte
+			)
 			diffs := map[common.Address]map[common.Address]*big.Int{}
 			henc := lexinum.EncodeHeight(height)
 			hlen := len(henc)
@@ -135,6 +139,19 @@ outer:
 			}
 			offsets := map[common.Uint256]int{}
 			for i, txn := range src.Transactions {
+				// NOTE(tav): We compute the unsigned transaction hash so that
+				// we can detect potential conflicts when generating nonces.
+				mut := &ctypes.MutableTransaction{
+					GasLimit: txn.GasLimit,
+					GasPrice: txn.GasPrice,
+					Nonce:    txn.Nonce,
+					Payer:    txn.Payer,
+					Payload:  txn.Payload,
+					TxType:   txn.TxType,
+					Version:  txn.Version,
+				}
+				mhash := mut.Hash()
+				hashes = append(hashes, mhash[:])
 				hash := txn.Hash()
 				dst.Transactions = append(dst.Transactions, &model.Transaction{
 					Hash: hash[:],
@@ -262,7 +279,14 @@ outer:
 			case 2:
 				log.Infof("Saving %s with %s at height %d", id, dst, height)
 			}
-			if err := s.setBlock(id, dst, changes, latest); err != nil {
+			err = s.setBlock(&blockState{
+				block:   dst,
+				changes: changes,
+				hashes:  hashes,
+				id:      id,
+				synced:  latest,
+			})
+			if err != nil {
 				log.Errorf("Failed to store block at height %d: %s", height, err)
 				continue outer
 			}
@@ -270,7 +294,7 @@ outer:
 	}
 }
 
-func (s *Store) checkTxHash(hash common.Uint256) (bool, *types.Error) {
+func (s *Store) checkUnsignedTxHash(hash common.Uint256) (bool, *types.Error) {
 	key := make([]byte, 33)
 	key[0] = 'e'
 	copy(key[1:], hash[:])
@@ -513,19 +537,19 @@ func (s *Store) getHeight() uint32 {
 	return uint32(*s.heightIndexed)
 }
 
-func (s *Store) setBlock(id *blockID, block *model.Block, changes []*balanceChange, synced uint32) error {
-	blockKey := blockKey(id.height)
-	blockData, err := proto.Marshal(block)
+func (s *Store) setBlock(state *blockState) error {
+	blockKey := blockKey(state.id.height)
+	blockData, err := proto.Marshal(state.block)
 	if err != nil {
 		return fmt.Errorf("services: failed to encode model.Block: %s", err)
 	}
-	hashKey := blockHash2HeightKey(id.hash[:])
-	heightKey := blockHeight2HashKey(id.height)
+	hashKey := blockHash2HeightKey(state.id.hash[:])
+	heightKey := blockHeight2HashKey(state.id.height)
 	hval := make([]byte, 4)
-	binary.LittleEndian.PutUint32(hval, id.height)
+	binary.LittleEndian.PutUint32(hval, state.id.height)
 	err = s.db.Update(func(txn *badger.Txn) error {
 		// Update account balances.
-		for _, acct := range changes {
+		for _, acct := range state.changes {
 			prev := &big.Int{}
 			it := txn.NewIterator(badger.IteratorOptions{
 				Reverse: true,
@@ -566,13 +590,13 @@ func (s *Store) setBlock(id *blockID, block *model.Block, changes []*balanceChan
 		if err := txn.Set(hashKey, hval); err != nil {
 			return err
 		}
-		if err := txn.Set(heightKey, id.hash[:]); err != nil {
+		if err := txn.Set(heightKey, state.id.hash[:]); err != nil {
 			return err
 		}
-		for _, tx := range block.Transactions {
+		for _, hash := range state.hashes {
 			key := make([]byte, 33)
 			key[0] = 'e'
-			copy(key[1:], tx.Hash)
+			copy(key[1:], hash)
 			if err := txn.Set(key, []byte{}); err != nil {
 				return err
 			}
@@ -582,7 +606,7 @@ func (s *Store) setBlock(id *blockID, block *model.Block, changes []*balanceChan
 	if err != nil {
 		return err
 	}
-	s.setHeight(int64(id.height), int64(synced))
+	s.setHeight(int64(state.id.height), int64(state.synced))
 	return nil
 }
 
@@ -634,6 +658,18 @@ func (s *Store) validateCurrency(c *types.Currency) (*currencyInfo, *types.Error
 			fmt.Errorf("services: %s is not defined as a currency", raw),
 		)
 	}
+	if info.currency.Decimals != c.Decimals {
+		return nil, invalidCurrencyf(
+			"mismatching decimals value for currency: expected %d, got %d",
+			info.currency.Decimals, c.Decimals,
+		)
+	}
+	if info.currency.Symbol != c.Symbol {
+		return nil, invalidCurrencyf(
+			"mismatching symbol for currency: expected %q, got %q",
+			info.currency.Symbol, c.Symbol,
+		)
+	}
 	return info, nil
 }
 
@@ -646,7 +682,6 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 				Symbol:   constants.ONG_SYMBOL,
 				Metadata: map[string]interface{}{
 					"contract": ongAddr.ToHexString(),
-					"type":     "Gas Token",
 				},
 			},
 		},
@@ -657,7 +692,6 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 				Symbol:   constants.ONT_SYMBOL,
 				Metadata: map[string]interface{}{
 					"contract": ontAddr.ToHexString(),
-					"type":     "Governance Token",
 				},
 			},
 		},
@@ -670,7 +704,6 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 				Symbol:   token.Symbol,
 				Metadata: map[string]interface{}{
 					"contract": token.Contract.ToHexString(),
-					"type":     "OEP4 Token",
 				},
 			},
 			wasm: token.Wasm,
