@@ -123,8 +123,7 @@ func parseAppTransferMulti(params []types.VmValue) ([]*Transfer, error) {
 }
 
 func parseSys(s *neovm.ValueStack) ([]*Transfer, common.Address, error) {
-	// pop last nil value
-	_, err := s.PopAsBytes()
+	_, err := s.PopAsBytes() // ignore the version value
 	if err != nil {
 		return nil, nilAddr, fmt.Errorf("chain: invalid params: %s", err)
 	}

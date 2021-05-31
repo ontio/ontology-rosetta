@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The ontology Authors
+ * Copyright (C) 2021 The ontology Authors
  * This file is part of The ontology library.
  *
  * The ontology is free software: you can redistribute it and/or modify
@@ -16,10 +16,32 @@
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Package version defines the server version info.
-package version
+// Command signtx creates a signature with an ed25519 key.
+package main
 
-const (
-	Node    = "1.13.2"
-	Rosetta = "1.13.3"
+import (
+	"crypto/ed25519"
+	"encoding/hex"
+	"fmt"
+	"os"
 )
+
+func main() {
+	args := os.Args[1:]
+	if len(args) != 2 {
+		fmt.Println("Usage: signtx <hex-encoded-ed25519-private-key> <hex-encoded-data-to-sign>")
+		os.Exit(1)
+	}
+	key, err := hex.DecodeString(args[0])
+	if err != nil {
+		fmt.Printf("!! Failed to decode ed25519 private key: %s", err)
+		os.Exit(1)
+	}
+	data, err := hex.DecodeString(args[1])
+	if err != nil {
+		fmt.Printf("!! Failed to decode data to sign: %s", err)
+		os.Exit(1)
+	}
+	sig := ed25519.Sign(ed25519.NewKeyFromSeed(key), data)
+	fmt.Println(hex.EncodeToString(sig))
+}

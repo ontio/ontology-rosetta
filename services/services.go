@@ -101,6 +101,14 @@ func (b *blockInfo) blockTimestamp() int64 {
 	return int64(b.block.Timestamp) * 1000
 }
 
+type blockState struct {
+	block   *model.Block
+	changes []*balanceChange
+	hashes  [][]byte
+	id      *blockID
+	synced  uint32
+}
+
 type currencyInfo struct {
 	contract common.Address
 	currency *types.Currency

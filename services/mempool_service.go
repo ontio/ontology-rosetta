@@ -58,7 +58,7 @@ func (s *service) MempoolTransaction(ctx context.Context, r *types.MempoolTransa
 	if err != nil {
 		return nil, errTransactionNotInMempool
 	}
-	ops, xerr := s.parsePayload(entry.Tx.Payload)
+	ops, _, xerr := s.parsePayload(entry.Tx.Payload)
 	if xerr != nil {
 		return nil, xerr
 	}
