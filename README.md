@@ -1,13 +1,10 @@
 # ontology-rosetta
-Ontology node which follows [Rosetta](https://github.com/coinbase/rosetta-specifications) BlockChain Standard
 
-
+[Rosetta](https://github.com/coinbase/rosetta-specifications) implementation of Ontology.
 
 ## Overview
 
 Here we lay out the procedure one needs to follow to deploy an Ontology node that adheres to Rosetta's blockchain standards. By complying to the **Rosetta blockchain specifications**, we at Ontology aim to streamline the development process for blockchain developers by ensuring certain aspects of the system are structured in a manner such that basic operations such as the **deployment process**, **communication**, and certain **data formats** are **standardized**, thus increasing the **overall flexibility** of the system.
-
-
 
 ## Build docker image
 
@@ -15,7 +12,7 @@ Here we lay out the procedure one needs to follow to deploy an Ontology node tha
 make docker
 ```
 
-## Running docker image
+## Run docker image
 
 There are two volumes to mount into the ontology-rosetta container, one is for saving blocks, the other is for the config file.
 
@@ -30,17 +27,15 @@ If you want to connect to testnet, set env `NETWORK_ID` value to `2`.
 docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath server-config.json):/data/server-config.json -p 9090:8080 ontology-rosetta:latest
 ```
 
-## How to use
+## Config
 
-### configuration
-
-The default configuration file is `server-config.json`:
+The default config file is `server-config.json`:
 
 ```json
 {
-    "block_wait_seconds": 1,
-    "oep4_tokens": [],
-    "port": 8080
+  "block_wait_seconds": 1,
+  "oep4_tokens": [],
+  "port": 8080
 }
 ```
 
@@ -48,15 +43,13 @@ Objects within the `oep4_tokens` array must follow this structure:
 
 ```json
 {
-    "contract": "ff31ec74d01f7b7d45ed2add930f5d2239f7de33",
-    "decimals": 9,
-    "symbol": "WING"
+  "contract": "ff31ec74d01f7b7d45ed2add930f5d2239f7de33",
+  "decimals": 9,
+  "symbol": "WING"
 }
 ```
 
-## Restful API
-
-Based on rosetta protocol, ontology-rosetta node provides following Restful APIs:
+## Rosetta API
 
 ### Network
 
@@ -67,23 +60,19 @@ Based on rosetta protocol, ontology-rosetta node provides following Restful APIs
 Request:
 
 ```json
-{
-    "metadata": {}
-}
+{}
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "network_identifiers": [
-        {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        }
-    ]
+  "network_identifiers": [
+    {
+      "blockchain": "ontology",
+      "network": "testnet"
+    }
+  ]
 }
 ```
 
@@ -93,154 +82,199 @@ Sample
 
 Request:
 
-Use the available "network_identifier" from /network/list
+Use the `network_identifier` from `/network/list`:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        }
-
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  }
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "version": {
-        "rosetta_version": "1.4.0",
-        "node_version": "1.11.0"
-    },
-    "allow": {
-        "operation_statuses": [
-            {
-                "status": "SUCCESS",
-                "successful": true
-            },
-            {
-                "status": "FAILED",
-                "successful": false
-            }
-        ],
-        "operation_types": [
-            "transfer"
-        ],
-        "errors": [
-            {
-                "code": 400,
-                "message": "network identifier is not supported",
-                "retriable": false
-            },
-            {
-                "code": 401,
-                "message": "block identifier is empty",
-                "retriable": false
-            },
-            {
-                "code": 402,
-                "message": "block index is invalid",
-                "retriable": false
-            },
-            {
-                "code": 403,
-                "message": "get block failed",
-                "retriable": true
-            },
-            {
-                "code": 404,
-                "message": "block hash is invalid",
-                "retriable": false
-            },
-            {
-                "code": 405,
-                "message": "get transaction failed",
-                "retriable": true
-            },
-            {
-                "code": 406,
-                "message": "transaction hash is invalid",
-                "retriable": false
-            },
-            {
-                "code": 407,
-                "message": "commit transaction failed",
-                "retriable": false
-            },
-            {
-                "code": 408,
-                "message": "tx hash is invalid",
-                "retriable": false
-            },
-            {
-                "code": 409,
-                "message": "block is not exist",
-                "retriable": false
-            },
-            {
-                "code": 500,
-                "message": "service not realize",
-                "retriable": false
-            },
-            {
-                "code": 501,
-                "message": "addr is invalid",
-                "retriable": true
-            },
-            {
-                "code": 502,
-                "message": "get balance error",
-                "retriable": true
-            },
-            {
-                "code": 503,
-                "message": "parse int error",
-                "retriable": true
-            },
-            {
-                "code": 504,
-                "message": "json marshal failed",
-                "retriable": false
-            },
-            {
-                "code": 505,
-                "message": "parse tx payload failed",
-                "retriable": false
-            },
-            {
-                "code": 506,
-                "message": "currency not config",
-                "retriable": false
-            },
-            {
-                "code": 507,
-                "message": "params error",
-                "retriable": true
-            },
-            {
-                "code": 508,
-                "message": "contract addr invalid",
-                "retriable": true
-            },
-            {
-                "code": 509,
-                "message": "preExecute contract failed",
-                "retriable": false
-            },
-            {
-                "code": 510,
-                "message": "query balance failed",
-                "retriable": true
-            }
-        ]
-    }
+  "allow": {
+    "balance_exemptions": null,
+    "call_methods": null,
+    "errors": [
+      {
+        "code": 101,
+        "message": "method not implemented",
+        "retriable": false
+      },
+      {
+        "code": 102,
+        "message": "method not available in offline mode",
+        "retriable": false
+      },
+      {
+        "code": 201,
+        "message": "currency not defined",
+        "retriable": true
+      },
+      {
+        "code": 301,
+        "message": "datastore error",
+        "retriable": true
+      },
+      {
+        "code": 302,
+        "message": "datastore transaction conflict",
+        "retriable": true
+      },
+      {
+        "code": 303,
+        "message": "datastore consistency failure",
+        "retriable": true
+      },
+      {
+        "code": 304,
+        "message": "unexpected internal error",
+        "retriable": true
+      },
+      {
+        "code": 305,
+        "message": "nonce generation failed",
+        "retriable": true
+      },
+      {
+        "code": 306,
+        "message": "protobuf error",
+        "retriable": false
+      },
+      {
+        "code": 401,
+        "message": "invalid account address",
+        "retriable": false
+      },
+      {
+        "code": 402,
+        "message": "invalid block hash",
+        "retriable": false
+      },
+      {
+        "code": 403,
+        "message": "invalid block identifier",
+        "retriable": false
+      },
+      {
+        "code": 404,
+        "message": "invalid block index",
+        "retriable": false
+      },
+      {
+        "code": 405,
+        "message": "invalid construct options",
+        "retriable": false
+      },
+      {
+        "code": 406,
+        "message": "invalid contract address",
+        "retriable": false
+      },
+      {
+        "code": 407,
+        "message": "invalid currency",
+        "retriable": false
+      },
+      {
+        "code": 408,
+        "message": "invalid gas limit",
+        "retriable": false
+      },
+      {
+        "code": 409,
+        "message": "invalid gas price",
+        "retriable": false
+      },
+      {
+        "code": 410,
+        "message": "invalid nonce",
+        "retriable": false
+      },
+      {
+        "code": 411,
+        "message": "invalid ops intent",
+        "retriable": false
+      },
+      {
+        "code": 412,
+        "message": "invalid payer address",
+        "retriable": false
+      },
+      {
+        "code": 413,
+        "message": "invalid public key",
+        "retriable": false
+      },
+      {
+        "code": 414,
+        "message": "invalid request field",
+        "retriable": false
+      },
+      {
+        "code": 415,
+        "message": "invalid signature",
+        "retriable": false
+      },
+      {
+        "code": 416,
+        "message": "invalid transaction hash",
+        "retriable": false
+      },
+      {
+        "code": 417,
+        "message": "invalid transaction payload",
+        "retriable": false
+      },
+      {
+        "code": 501,
+        "message": "broadcast failed",
+        "retriable": true
+      },
+      {
+        "code": 502,
+        "message": "transaction not in mempool",
+        "retriable": true
+      },
+      {
+        "code": 503,
+        "message": "unknown block hash",
+        "retriable": true
+      },
+      {
+        "code": 504,
+        "message": "unknown block index",
+        "retriable": true
+      }
+    ],
+    "historical_balance_lookup": true,
+    "mempool_coins": false,
+    "operation_statuses": [
+      {
+        "status": "SUCCESS",
+        "successful": true
+      },
+      {
+        "status": "FAILED",
+        "successful": false
+      }
+    ],
+    "operation_types": [
+      "gas_fee",
+      "transfer"
+    ]
+  },
+  "version": {
+    "node_version": "1.13.2",
+    "rosetta_version": "1.13.3"
+  }
 }
 ```
-
-
 
 **/network/status**
 
@@ -248,60 +282,72 @@ Sample
 
 Request:
 
-Use the available "network_identifier" from /network/list
+Use the `network_identifier` from `/network/list`:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        }
-
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  }
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "current_block_identifier": {
-        "index": 4789126,
-        "hash": "76fcf0fbd5e979721fe52e472ac79eb26f4bc502c371508574c0e03386be20e6"
+  "current_block_identifier": {
+    "hash": "16607e636debd83d4591ede226d3e4df66ce91974c0c92bb7a2b24bd41c5109a",
+    "index": 16029266
+  },
+  "current_block_timestamp": 1622449609000,
+  "genesis_block_identifier": {
+    "hash": "44425ae42a394ec0c5f3e41d757ffafa790b53f7301147a291ab9b60a956394c",
+    "index": 0
+  },
+  "peers": [
+    {
+      "metadata": {
+        "address": "45.43.63.93:20338",
+        "height": 16029266,
+        "last_contact": "2021-05-31T08:27:24Z",
+        "relay": true,
+        "self": "49d991f2ebc3f8a98ad48c3d090276c9ff10b61e",
+        "version": "v2.2.0-0-ga25aaea"
+      },
+      "peer_id": "551892e4fec71a49a4d63bf5177ca29072f94177"
     },
-    "current_block_timestamp": 1560312815000,
-    "genesis_block_identifier": {
-        "index": 0,
-        "hash": "1b8fa7f242d0eeb4395f89cbb59e4c29634047e33245c4914306e78a88e14ce5"
+    {
+      "metadata": {
+        "address": "35.246.14.9:20338",
+        "height": 16029266,
+        "last_contact": "2021-05-31T08:27:24Z",
+        "relay": true,
+        "self": "49d991f2ebc3f8a98ad48c3d090276c9ff10b61e",
+        "version": "v2.2.0-0-ga25aaea"
+      },
+      "peer_id": "d214c85303149288b16e424f50e35d13c55e710f"
     },
-    "peers": [
-        {
-            "peer_id": "000000000000000000000000b41fe9ceaaaa4d7b",
-            "metadata": {
-                "address": "40.113.237.243:20338",
-                "height": 8454242
-            }
-        },
-        {
-            "peer_id": "000000000000000000000000a4f0c524d8efd6a8",
-            "metadata": {
-                "address": "139.219.141.104:20338",
-                "height": 8454242
-            }
-        },
-        {
-            "peer_id": "0000000000000000000000008e6528f4659f3112",
-            "metadata": {
-                "address": "50.18.219.74:20338",
-                "height": 8454242
-            }
-        }
-    ]
+    {
+      "metadata": {
+        "address": "132.145.87.235:20338",
+        "height": 1928227,
+        "last_contact": "2021-05-31T08:27:26Z",
+        "relay": true,
+        "self": "49d991f2ebc3f8a98ad48c3d090276c9ff10b61e",
+        "version": "d7f8833"
+      },
+      "peer_id": "000000000000000000000000e10f0e0f7f85dae9"
+    }
+  ],
+  "sync_status": {
+    "current_index": 16029266,
+    "synced": true,
+    "target_index": 16029266
+  }
 }
 ```
-
-
 
 ### Account
 
@@ -313,58 +359,52 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
-    "account_identifier": {
-        "address": "AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK",
-        "metadata": {}
-    },
-	"block_identifier": {
-            "index": 310
-        }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "account_identifier": {
+    "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+  },
+  "block_identifier": {
+    "index": 16028389,
+    "hash": "1dc336bb7a098c3d6cdc34f7a2a96ab8e726664c5c45924d4b4865fb7c52a9a0"
+  }
 }
 ```
 
-Response:
-
-Sample:
+Sample Response:
 
 ```json
 {
-    "block_identifier": {
-        "index": 310,
-        "hash": "11405500403779cff364803bbd7fe4dc74ba9119015fd79473c188b727769c52"
-    },
-    "balances": [
-        {
-            "value": "14700000",
-            "currency": {
-                "symbol": "ONT",
-                "decimals": 0,
-                "metadata": {
-                    "ContractAddress": "0100000000000000000000000000000000000000",
-                    "TokenType": "Governance Token"
-                }
-            }
+  "balances": [
+    {
+      "currency": {
+        "decimals": 0,
+        "metadata": {
+          "contract": "0100000000000000000000000000000000000000"
         },
-        {
-            "value": "1750000140000",
-            "currency": {
-                "symbol": "ONG",
-                "decimals": 9,
-                "metadata": {
-                    "ContractAddress": "0200000000000000000000000000000000000000",
-                    "TokenType": "Gas Token"
-                }
-            }
-        }
-    ]
+        "symbol": "ONT"
+      },
+      "value": "50"
+    },
+    {
+      "currency": {
+        "decimals": 9,
+        "metadata": {
+          "contract": "0200000000000000000000000000000000000000"
+        },
+        "symbol": "ONG"
+      },
+      "value": "99900000000"
+    }
+  ],
+  "block_identifier": {
+    "hash": "1dc336bb7a098c3d6cdc34f7a2a96ab8e726664c5c45924d4b4865fb7c52a9a0",
+    "index": 16028389
+  }
 }
 ```
-
-
 
 ### Block
 
@@ -376,126 +416,132 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "block_identifier": {
+    "index": 83690
+  }
+}
+```
+
+Sample Response:
+
+```json
+{
+  "block": {
     "block_identifier": {
-        "index":54
-    }
-
-}
-```
-
-Response:
-
-Sample:
-
-```json
-{
-    "block": {
-        "block_identifier": {
-            "index": 54,
-            "hash": "790ea8942e5722c75ba638312caa8c1380c41da4c145d6493ae510eb6017c5f3"
-        },
-        "parent_block_identifier": {
-            "index": 53,
-            "hash": "2b52c7fcdbdcd362211e1646fa6351c8f6fd4cbfa520fe7857133e59061ff348"
-        },
-        "timestamp": 1530389834000,
-        "transactions": [
-            {
-                "transaction_identifier": {
-                    "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
-                },
-                "operations": [
-                    {
-                        "operation_identifier": {
-                            "index": 0
-                        },
-                        "type": "transfer",
-                        "status": "SUCCESS",
-                        "account": {
-                            "address": "AJMFNZL5jGjZJEhBrJfVLHJeJ3KwiczJ6B"
-                        },
-                        "amount": {
-                            "value": "-1000000000",
-                            "currency": {
-                                "symbol": "ONT",
-                                "decimals": 0,
-                                "metadata": {
-                                    "ContractAddress": "0100000000000000000000000000000000000000",
-                                    "TokenType": "Governance Token"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "operation_identifier": {
-                            "index": 1
-                        },
-                        "related_operations": [
-                            {
-                                "index": 0
-                            }
-                        ],
-                        "type": "transfer",
-                        "status": "SUCCESS",
-                        "account": {
-                            "address": "AWyEMxiLUVr5MeVJe3Fw5Xsij7iZUmfYyk"
-                        },
-                        "amount": {
-                            "value": "1000000000",
-                            "currency": {
-                                "symbol": "ONT",
-                                "decimals": 0,
-                                "metadata": {
-                                    "ContractAddress": "0100000000000000000000000000000000000000",
-                                    "TokenType": "Governance Token"
-                                }
-                            }
-                        }
-                    }
-                ]
+      "hash": "513949285fdbd66c8cd40427a9832fe15002b2fbe17cf5da3746340fd922efe1",
+      "index": 83690
+    },
+    "parent_block_identifier": {
+      "hash": "a345c752d07d46b7237f36ecb7e021d26ec97c9aa78472851a185d7261fb4e95",
+      "index": 83689
+    },
+    "timestamp": 1532688780000,
+    "transactions": [
+      {
+        "operations": [
+          {
+            "operation_identifier": {
+              "index": 0
+            },
+            "type": "transfer",
+            "status": "SUCCESS",
+            "account": {
+              "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV"
+            },
+            "amount": {
+              "value": "-9438053292451530",
+              "currency": {
+                "symbol": "ONG",
+                "decimals": 9,
+                "metadata": {
+                  "contract": "0200000000000000000000000000000000000000"
+                }
+              }
             }
-        ]
-    }
+          },
+          {
+            "operation_identifier": {
+              "index": 1
+            },
+            "related_operations": [
+              {
+                "index": 0
+              }
+            ],
+            "type": "transfer",
+            "status": "SUCCESS",
+            "account": {
+              "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
+            },
+            "amount": {
+              "value": "9438053292451530",
+              "currency": {
+                "symbol": "ONG",
+                "decimals": 9,
+                "metadata": {
+                  "contract": "0200000000000000000000000000000000000000"
+                }
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 2
+            },
+            "type": "gas_fee",
+            "status": "SUCCESS",
+            "account": {
+              "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
+            },
+            "amount": {
+              "value": "-10000000",
+              "currency": {
+                "symbol": "ONG",
+                "decimals": 9,
+                "metadata": {
+                  "contract": "0200000000000000000000000000000000000000"
+                }
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 3
+            },
+            "related_operations": [
+              {
+                "index": 2
+              }
+            ],
+            "type": "gas_fee",
+            "status": "SUCCESS",
+            "account": {
+              "address": "AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK"
+            },
+            "amount": {
+              "value": "10000000",
+              "currency": {
+                "symbol": "ONG",
+                "decimals": 9,
+                "metadata": {
+                  "contract": "0200000000000000000000000000000000000000"
+                }
+              }
+            }
+          }
+        ],
+        "transaction_identifier": {
+          "hash": "659ff28a14bac75883f0b4501fcdd34db170697773a61a8580806d0d6e5773ec"
+        }
+      }
+    ]
+  }
 }
 ```
-
-**Note** : a transaction will be presented as two operations :
-
-the first is an "outcome" operation with amount value may be "minus" , the second is related to the previous operation as an "income" operation, they must have the same amount structure. 
-
-**Currency** : token information
-
-ONT:
-
-```json
-{
-                                "symbol": "ONT",
-                                "decimals": 0,
-                                "metadata": {
-                                    "ContractAddress": "0100000000000000000000000000000000000000",
-                                    "TokenType": "Governance Token"
-                                }
-                            }
-```
-
-ONG:
-
-```
-{
-                                "symbol": "ONG",
-                                "decimals": 9,
-                                "metadata": {
-                                    "ContractAddress": "0200000000000000000000000000000000000000",
-                                    "TokenType": "Gas Token"
-                                }
-                            }
-```
-
-
 
 **/block/transaction**
 
@@ -505,515 +551,491 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
-    "block_identifier": {
-            "index": 54,
-            "hash": "790ea8942e5722c75ba638312caa8c1380c41da4c145d6493ae510eb6017c5f3"
-        },
-    "transaction_identifier": {
-        "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
-    }
-
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "block_identifier": {
+    "index": 83690,
+    "hash": "513949285fdbd66c8cd40427a9832fe15002b2fbe17cf5da3746340fd922efe1"
+  },
+  "transaction_identifier": {
+    "hash": "659ff28a14bac75883f0b4501fcdd34db170697773a61a8580806d0d6e5773ec"
+  }
 }
 ```
 
-Response:
-
-Sample:
+Sample Response:
 
 ```json
 {
-    "transaction": {
-        "transaction_identifier": {
-            "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
+  "transaction": {
+    "operations": [
+      {
+        "account": {
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV"
         },
-        "operations": [
-            {
-                "operation_identifier": {
-                    "index": 0
-                },
-                "type": "transfer",
-                "status": "SUCCESS",
-                "account": {
-                    "address": "AJMFNZL5jGjZJEhBrJfVLHJeJ3KwiczJ6B"
-                },
-                "amount": {
-                    "value": "-1000000000",
-                    "currency": {
-                        "symbol": "ONT",
-                        "decimals": 0,
-                        "metadata": {
-                            "ContractAddress": "0100000000000000000000000000000000000000",
-                            "TokenType": "Governance Token"
-                        }
-                    }
-                }
-            },
-            {
-                "operation_identifier": {
-                    "index": 1
-                },
-                "related_operations": [
-                    {
-                        "index": 0
-                    }
-                ],
-                "type": "transfer",
-                "status": "SUCCESS",
-                "account": {
-                    "address": "AWyEMxiLUVr5MeVJe3Fw5Xsij7iZUmfYyk"
-                },
-                "amount": {
-                    "value": "1000000000",
-                    "currency": {
-                        "symbol": "ONT",
-                        "decimals": 0,
-                        "metadata": {
-                            "ContractAddress": "0100000000000000000000000000000000000000",
-                            "TokenType": "Governance Token"
-                        }
-                    }
-                }
+        "amount": {
+          "currency": {
+            "symbol": "ONG",
+            "decimals": 9,
+            "metadata": {
+              "contract": "0200000000000000000000000000000000000000"
             }
-        ]
+          },
+          "value": "-9438053292451530"
+        },
+        "operation_identifier": {
+          "index": 0
+        },
+        "status": "SUCCESS",
+        "type": "transfer"
+      },
+      {
+        "account": {
+          "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
+        },
+        "amount": {
+          "currency": {
+            "symbol": "ONG",
+            "decimals": 9,
+            "metadata": {
+              "contract": "0200000000000000000000000000000000000000"
+            }
+          },
+          "value": "9438053292451530"
+        },
+        "operation_identifier": {
+          "index": 1
+        },
+        "related_operations": [
+          {
+            "index": 0
+          }
+        ],
+        "status": "SUCCESS",
+        "type": "transfer"
+      },
+      {
+        "account": {
+          "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
+        },
+        "amount": {
+          "currency": {
+            "symbol": "ONG",
+            "decimals": 9,
+            "metadata": {
+              "contract": "0200000000000000000000000000000000000000"
+            }
+          },
+          "value": "-10000000"
+        },
+        "operation_identifier": {
+          "index": 2
+        },
+        "status": "SUCCESS",
+        "type": "gas_fee"
+      },
+      {
+        "account": {
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK"
+        },
+        "amount": {
+          "currency": {
+            "symbol": "ONG",
+            "decimals": 9,
+            "metadata": {
+              "contract": "0200000000000000000000000000000000000000"
+            }
+          },
+          "value": "10000000"
+        },
+        "operation_identifier": {
+          "index": 3
+        },
+        "related_operations": [
+          {
+            "index": 2
+          }
+        ],
+        "status": "SUCCESS",
+        "type": "gas_fee"
+      }
+    ],
+    "transaction_identifier": {
+      "hash": "659ff28a14bac75883f0b4501fcdd34db170697773a61a8580806d0d6e5773ec"
     }
+  }
 }
 ```
-
-
 
 ### Construction
 
 **/construction/derive**
 
-*Derive Address from Public Key*
+*Derive an AccountIdentifier from a PublicKey*
 
 Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
-    "public_key":{
-        "hex_bytes":"<pubkey hex string>",
-        "curev_type":"secp256k1|edwards25519",
-        "metadata":{
-            "type":"hex|base58"
-        }
-    }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "public_key": {
+    "hex_bytes": "06054a5f08c5ae703c5ffc12f6c63f76dce9daeb3e32d98d96e69befbc70f3de",
+    "curve_type": "edwards25519"
+  }
 }
 ```
 
-Address type supports ```hex```  or ```base58``` format
-
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "address":"<address>",
-    "metadata":{
-         "type":"hex|base58"
-    }
+  "account_identifier": {
+    "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+  }
 }
 ```
-
-
 
 **/construction/preprocess**
 
-*Create Metadata Request*
+*Create a Request to Fetch Metadata*
 
 Request:
 
 ```json
 {
-    "network_identifier": {
-        "blockchain": "ontology",
-        "network": "privatenet"
-    },
-    "operations": [
-        {
-            "operation_identifier": {
-                "index": 0
-            },
-            "type": "transfer",
-            "status": "",
-            "account": {
-                "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud"
-            },
-            "amount": {
-                "value": "-1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 1
-            },
-            "related_operations": [
-                {
-                    "index": 0
-                }
-            ],
-            "type": "transfer",
-            "status": "",
-            "account": {
-                "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-            },
-            "amount": {
-                "value": "1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            },
-            "metadata": {
-                "gasLimit": 20000,
-                "gasPrice": 2500
-            }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "operations": [
+    {
+      "operation_identifier": {
+        "index": 0
+      },
+      "type": "transfer",
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "value": "-1",
+        "currency": {
+          "symbol": "ONT",
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          }
         }
-    ],
-    "metadata": {
-        "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
+      }
+    },
+    {
+      "operation_identifier": {
+        "index": 1
+      },
+      "related_operations": [
+        {
+          "index": 0
+        }
+      ],
+      "type": "transfer",
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "value": "1",
+        "currency": {
+          "symbol": "ONT",
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          }
+        }
+      }
     }
+  ],
+  "metadata": {
+  }
 }
 ```
 
-Response:
+The request's `metadata` field supports some optional `uint32` subfields:
 
-Sample
+* `gas_limit` — If unspecified, this will default to the minimum transaction gas
+  value.
+
+* `gas_price` — If unspecified, this will default to using the current network
+  gas price.
+
+* `nonce` — If unspecified, this will default to a randomly generated nonce that
+  doesn't conflict with any transactions already seen by the node.
+
+* `payer` — If unspecified, this will default to the sender inferred from the
+  provided operations.
+
+Sample Response:
 
 ```json
 {
-    "options": {
-        "amount": "1",
-        "decimals": 0,
-        "fromAddr": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-        "gasLimit": 20000,
-        "gasPrice": 2500,
-        "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
-        "symbol": "ONT",
-        "toAddr": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-    }
+  "options": {
+    "protobuf": "0a0101121400000000000000000000000000000000000000011a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f3a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f421409fa00755de7e8fc9eafe28bbf31384b56e18e0f"
+  }
 }
 ```
+
 **/construction/metadata**
 
-*Get Transaction Construction Metadata*
+*Get Metadata for Transaction Construction*
 
 Request:
 
 ```json
 {
-    "network_identifier": {
-        "blockchain": "ontology",
-        "network": "privatenet"
-    },
-    "options": {
-        "method": "transfer"
-    }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "options": {
+    "protobuf": "0a0101121400000000000000000000000000000000000000011a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f3a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f421409fa00755de7e8fc9eafe28bbf31384b56e18e0f"
+  }
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "metadata": {
-        "amount": "amount,data type string",
-        "asset": "ont or ong,data type string",
-        "fromAddr": "from address,data type string",
-        "gasLimit": "default gas limit 2000,data type string",
-        "gasPrice": "default gas price 2500,data type string",
-        "payer": "default from address,data type string",
-        "toAddr": "to address,data type string"
-    }
+  "metadata": {
+    "protobuf": "0a0101121400000000000000000000000000000000000000011a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f20a09c0128c41330cbb1f4b00f3a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f421409fa00755de7e8fc9eafe28bbf31384b56e18e0f"
+  }
 }
-
 ```
-
 
 **/construction/payloads**
 
-*Create Metadata Request*
+*Generate an Unsigned Transaction and Signing Payloads*
 
 Request:
 
 ```json
 {
-    "network_identifier": {
-        "blockchain": "ontology",
-        "network": "privatenet"
-    },
-    "operations": [
-        {
-            "operation_identifier": {
-                "index": 0
-            },
-            "type": "transfer",
-            "status": "",
-            "account": {
-                "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud"
-            },
-            "amount": {
-                "value": "-1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 1
-            },
-            "related_operations": [
-                {
-                    "index": 0
-                }
-            ],
-            "type": "transfer",
-            "status": "",
-            "account": {
-                "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-            },
-            "amount": {
-                "value": "1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            },
-            "metadata": {
-                "gasLimit": 20000,
-                "gasPrice": 2500
-            }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "operations": [
+    {
+      "operation_identifier": {
+        "index": 0
+      },
+      "type": "transfer",
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "value": "-1",
+        "currency": {
+          "symbol": "ONT",
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          }
         }
-    ],
-    "metadata": {
-        "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
+      }
+    },
+    {
+      "operation_identifier": {
+        "index": 1
+      },
+      "related_operations": [
+        {
+          "index": 0
+        }
+      ],
+      "type": "transfer",
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "value": "1",
+        "currency": {
+          "symbol": "ONT",
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          }
+        }
+      }
     }
+  ],
+  "metadata": {
+    "protobuf": "0a0101121400000000000000000000000000000000000000011a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f20a09c0128c41330cbb1f4b00f3a1409fa00755de7e8fc9eafe28bbf31384b56e18e0f421409fa00755de7e8fc9eafe28bbf31384b56e18e0f"
+  }
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "unsigned_transaction": "00d1b8c16889204e000000000000c409000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
-    "payloads": [
-        {
-            "hex_bytes": "a4a88f45b51e7aa01eedd0db3a7d7aff0a6e641256f3e073e8dbabb19358513f",
-            "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-            "signature_type": "ecdsa"
-        },
-        {
-            "hex_bytes": "4e6240066243bc2197fe8600791aba0175c6c259ea3293dbddc56d90eaf87298",
-            "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
-            "signature_type": "ecdsa"
-        }
-    ]
+  "payloads": [
+    {
+      "account_identifier": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d",
+      "hex_bytes": "f33ee01563f1f93f80bbdc031ded71d4cd4a23b513fc52864cfa598f18a2eb53",
+      "signature_type": "ed25519"
+    }
+  ],
+  "unsigned_transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000"
 }
 ```
 
 **/construction/parse**
 
-*Create Metadata Request*
+*Parse a Transaction*
 
 Request:
 
 ```json
 {
-    "network_identifier": {
-        "blockchain": "ontology",
-        "network": "privatenet"
-    },
-    "signed":false,
-    "transaction":"00d10534aa05c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000"
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "signed": false,
+  "transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000"
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "operations": [
-        {
-            "operation_identifier": {
-                "index": 0
-            },
-            "type": "transfer",
-            "status": "SUCCESS",
-            "account": {
-                "address": "AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud"
-            },
-            "amount": {
-                "value": "-1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            }
+  "metadata": {
+    "gas_limit": 20000,
+    "gas_price": 2500,
+    "nonce": 4129102027,
+    "payer": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+  },
+  "operations": [
+    {
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "currency": {
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          },
+          "symbol": "ONT"
         },
+        "value": "-1"
+      },
+      "operation_identifier": {
+        "index": 0
+      },
+      "type": "transfer"
+    },
+    {
+      "account": {
+        "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+      },
+      "amount": {
+        "currency": {
+          "decimals": 0,
+          "metadata": {
+            "contract": "0100000000000000000000000000000000000000"
+          },
+          "symbol": "ONT"
+        },
+        "value": "1"
+      },
+      "operation_identifier": {
+        "index": 1
+      },
+      "related_operations": [
         {
-            "operation_identifier": {
-                "index": 1
-            },
-            "related_operations": [
-                {
-                    "index": 0
-                }
-            ],
-            "type": "transfer",
-            "status": "SUCCESS",
-            "account": {
-                "address": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
-            },
-            "amount": {
-                "value": "1",
-                "currency": {
-                    "symbol": "ONT",
-                    "decimals": 0,
-                    "metadata": {
-                        "ContractAddress": "0100000000000000000000000000000000000000",
-                        "TokenType": "Governance Token"
-                    }
-                }
-            },
-            "metadata": {
-                "gasLimit": 20000,
-                "gasPrice": 2500
-            }
+          "index": 0
         }
-    ],
-    "signers": [],
-    "metadata": {
-        "payer": "Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS"
+      ],
+      "type": "transfer"
     }
+  ]
 }
 ```
 
 **/construction/combine**
 
-*Create Metadata Request*
-
-example:  account ```AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud``` transfer 1 ont to account ```Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS``` and  ```Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS``` will pay for the transfer fee as payer
+*Generate Network Transaction from Signatures*
 
 Request:
 
 ```json
 {
-	    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "testnet"
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "unsigned_transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
+  "signatures": [
+    {
+      "signing_payload": {
+        "account_identifier": {
+          "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
         },
-        "unsigned_transaction":"00d1594606d2c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b650000",
-        "signatures":[
-        		{
-	        	"signing_payload":{
-	        		"address":"Af6xrG7WB9wUKQ3aRDXnfba2G5DXjqejMS",
-	        		"hex_bytes":"2b371f76afde8a543fd0a6a58f2578281b3517e96c2a811114ea4c78e362b221",
-	        		"signature_type":"ecdsa"
-	        	},
-	        	"public_key":{
-	        		"hex_bytes":"02263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaae",
-	        		"curve_type":"secp256k1"
-	        	},
-	        	"signature_type":"ecdsa",
-	        	"hex_bytes":"3b52bc592bbba306ca9368e2808d6eb1d14fe0c3e2c801294bf8ebe3a994b464e6888038b6411a78428f9020b9f43c9dbcada7f77c0307b3ce9a410d8d2b6fa6"
-        	},
-        	{
-	        	"signing_payload":{
-	        		"address":"AGc9NrdF5MuMJpkFfZ3MWKa67ds6H2fzud",
-	        		"hex_bytes":"2b371f76afde8a543fd0a6a58f2578281b3517e96c2a811114ea4c78e362b221",
-	        		"signature_type":"ecdsa"
-	        	},
-	        	"public_key":{
-	        		"hex_bytes":"03944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7",
-	        		"curve_type":"secp256k1"
-	        	},
-	        	"signature_type":"ecdsa",
-	        	"hex_bytes":"a6f29359a94db9725ceafa37012abd3a02cff41fe1b3ca6fb0f4c58e86cd2e214567a5f29682cd4432404ecb8ded644bfb9324fe0eb746fe53097ffed13d11b1"
-        	}
-        ]
+        "hex_bytes": "f33ee01563f1f93f80bbdc031ded71d4cd4a23b513fc52864cfa598f18a2eb53",
+        "signature_type": "ed25519"
+      },
+      "public_key": {
+        "hex_bytes": "06054a5f08c5ae703c5ffc12f6c63f76dce9daeb3e32d98d96e69befbc70f3de",
+        "curve_type": "edwards25519"
+      },
+      "signature_type": "ed25519",
+      "hex_bytes": "3e82f222223192fc65ed8b29a7016025480914cbfecd9f55de1b7e50bfed82663d296d1c5171d1af5dd5eca8b8b45287355b2ac2f0a0c378ced6b929b6f0bf02"
+    }
+  ]
 }
 ```
 
-
-
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "signed_transaction": "00d1594606d2c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000241403b52bc592bbba306ca9368e2808d6eb1d14fe0c3e2c801294bf8ebe3a994b464e6888038b6411a78428f9020b9f43c9dbcada7f77c0307b3ce9a410d8d2b6fa6232102263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaaeac4140a6f29359a94db9725ceafa37012abd3a02cff41fe1b3ca6fb0f4c58e86cd2e214567a5f29682cd4432404ecb8ded644bfb9324fe0eb746fe53097ffed13d11b1232103944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7ac"
+  "signed_transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000142410a3e82f222223192fc65ed8b29a7016025480914cbfecd9f55de1b7e50bfed82663d296d1c5171d1af5dd5eca8b8b45287355b2ac2f0a0c378ced6b929b6f0bf022422141906054a5f08c5ae703c5ffc12f6c63f76dce9daeb3e32d98d96e69befbc70f3deac"
 }
 ```
 
 **/construction/hash**
 
-*Get hash of signed transaction*
+*Get the Hash of a Signed Transaction*
 
 Request:
-```json
-{
-    "network_identifier": {
-        "blockchain": "ontology",
-        "network": "privatenet"
-    },
-    "signed_transaction":"00d1458813d9c409000000000000204e000000000000ffe723aefd01bac311d8b16ff8bfd594d77f31ee7100c66b14092118e0112274581b60dfb6fedcbfdcfc044be76a7cc814ffe723aefd01bac311d8b16ff8bfd594d77f31ee6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b6500024140cb1e23e46a7e8e01563c64d7b5d9bf8022f549d411487156d55403ec7213f6cec49d413631d841852e493dca27e746977ea2ddd9e69906b8db7e71c3e15f7407232102263e2e1eecf7a45f21e9e0f865510966d4e93551d95876ecb3c42acf2b68aaaeac41409d15ed0d27224caecb55207b002f4a57846423bbe26764307e29704abfe4b327710c449531ac0f9ef621d864eab93a2ef373d2bc33027873c9466a30e748145f232103944e3ff777b14add03a76fd6767aaf4a65c227ec201375d9118d4e6b272494c7ac"
-}
-```
-
-Response:
-
-Sample
 
 ```json
 {
-    "transaction_hash": "cc45747a18862709f4ce50290ac331c94fb5ef6b608c36c90b00314884312b03"
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "signed_transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000142410a3e82f222223192fc65ed8b29a7016025480914cbfecd9f55de1b7e50bfed82663d296d1c5171d1af5dd5eca8b8b45287355b2ac2f0a0c378ced6b929b6f0bf022422141906054a5f08c5ae703c5ffc12f6c63f76dce9daeb3e32d98d96e69befbc70f3deac"
 }
 ```
 
+Sample Response:
 
-  ​
+```json
+{
+  "transaction_identifier": {
+    "hash": "53eba2188f59fa4c8652fc13b5234acdd471ed1d03dcbb803ff9f16315e03ef3"
+  }
+}
+```
 
 **/construction/submit**
 
@@ -1023,27 +1045,23 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
-     "signed_transaction": "<signed tx hex>"
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "signed_transaction": "00d1cb181df6c409000000000000204e00000000000009fa00755de7e8fc9eafe28bbf31384b56e18e0f7100c66b1409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc81409fa00755de7e8fc9eafe28bbf31384b56e18e0f6a7cc8516a7cc86c51c1087472616e736665721400000000000000000000000000000000000000010068164f6e746f6c6f67792e4e61746976652e496e766f6b65000142410a3e82f222223192fc65ed8b29a7016025480914cbfecd9f55de1b7e50bfed82663d296d1c5171d1af5dd5eca8b8b45287355b2ac2f0a0c378ced6b929b6f0bf022422141906054a5f08c5ae703c5ffc12f6c63f76dce9daeb3e32d98d96e69befbc70f3deac"
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "transaction_identifier": {
-        "hash": "<tx hash>"
-    },
-    "metadata": {}
+  "transaction_identifier": {
+    "hash": "53eba2188f59fa4c8652fc13b5234acdd471ed1d03dcbb803ff9f16315e03ef3"
+  }
 }
 ```
-
 
 ### Mempool
 
@@ -1055,24 +1073,18 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        }
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  }
 }
 ```
 
-Response:
+Sample Response:
 
-Sample
-
-```
+```json
 {
-    "transaction_identifiers": [
-        {
-            "hash": "<tx hash>"
-        }
-    ]
+  "transaction_identifiers": ["53eba2188f59fa4c8652fc13b5234acdd471ed1d03dcbb803ff9f16315e03ef3"]
 }
 ```
 
@@ -1084,82 +1096,73 @@ Request:
 
 ```json
 {
-    "network_identifier":  {
-            "blockchain": "ontology",
-            "network": "mainnet"
-        },
-    "transaction_identifier": {
-        "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
-    }
-
+  "network_identifier": {
+    "blockchain": "ontology",
+    "network": "testnet"
+  },
+  "transaction_identifier": {
+    "hash": "53eba2188f59fa4c8652fc13b5234acdd471ed1d03dcbb803ff9f16315e03ef3"
+  }
 }
 ```
 
-Response:
-
-Sample
+Sample Response:
 
 ```json
 {
-    "transaction": {
-        "transaction_identifier": {
-            "hash": "20247d9df50d830b8978a5c49313a6f8a118fd5bb9c2950e3c7f95f5ac6410f6"
+  "transaction": {
+    "operations": [
+      {
+        "account": {
+          "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
         },
-        "operations": [
-            {
-                "operation_identifier": {
-                    "index": 0
-                },
-                "type": "transfer",
-                "status": "SUCCESS",
-                "account": {
-                    "address": "AJMFNZL5jGjZJEhBrJfVLHJeJ3KwiczJ6B"
-                },
-                "amount": {
-                    "value": "-1000000000",
-                    "currency": {
-                        "symbol": "ONT",
-                        "decimals": 0,
-                        "metadata": {
-                            "ContractAddress": "0100000000000000000000000000000000000000",
-                            "TokenType": "Governance Token"
-                        }
-                    }
-                }
-            },
-            {
-                "operation_identifier": {
-                    "index": 1
-                },
-                "related_operations": [
-                    {
-                        "index": 0
-                    }
-                ],
-                "type": "transfer",
-                "status": "SUCCESS",
-                "account": {
-                    "address": "AWyEMxiLUVr5MeVJe3Fw5Xsij7iZUmfYyk"
-                },
-                "amount": {
-                    "value": "1000000000",
-                    "currency": {
-                        "symbol": "ONT",
-                        "decimals": 0,
-                        "metadata": {
-                            "ContractAddress": "0100000000000000000000000000000000000000",
-                            "TokenType": "Governance Token"
-                        }
-                    }
-                }
+        "amount": {
+          "currency": {
+            "symbol": "ONT",
+            "decimals": 0,
+            "metadata": {
+              "contract": "0100000000000000000000000000000000000000"
             }
-        ]
+          },
+          "value": "-1"
+        },
+        "operation_identifier": {
+          "index": 0
+        },
+        "type": "transfer"
+      },
+      {
+        "account": {
+          "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
+        },
+        "amount": {
+          "currency": {
+            "symbol": "ONT",
+            "decimals": 0,
+            "metadata": {
+              "contract": "0100000000000000000000000000000000000000"
+            }
+          },
+          "value": "1"
+        },
+        "operation_identifier": {
+          "index": 1
+        },
+        "related_operations": [
+          {
+            "index": 0
+          }
+        ],
+        "type": "transfer"
+      }
+    ],
+    "transaction_identifier": {
+      "hash": "53eba2188f59fa4c8652fc13b5234acdd471ed1d03dcbb803ff9f16315e03ef3"
     }
+  }
 }
 ```
 
-
-
 ## Integrating using the Construction API
 
-Please refer to [Dev document](https://docs.ont.io/ontology-node/node-deployment/rosetta-node#integrating-using-the-construction-api)
+Please refer to the [dev document](https://docs.ont.io/ontology-node/node-deployment/rosetta-node#integrating-using-the-construction-api)
