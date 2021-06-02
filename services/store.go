@@ -171,7 +171,9 @@ outer:
 			for _, info := range evts {
 				failed := info.State == event.CONTRACT_STATE_FAIL
 				gasVerified := false
-				txn := dst.Transactions[offsets[info.TxHash]]
+				offset := offsets[info.TxHash]
+				ori := src.Transactions[offset]
+				txn := dst.Transactions[offset]
 				txn.Failed = failed
 				for _, evt := range info.Notify {
 					_, ok := s.tokens[evt.ContractAddress]
@@ -200,7 +202,11 @@ outer:
 					if gasVerified {
 						xfer.isGas = false
 					} else if xfer.isGas {
-						gasVerified = true
+						if ori.Payer == xfer.from {
+							gasVerified = true
+						} else {
+							xfer.isGas = false
+						}
 					}
 					if xfer.from != nullAddr {
 						accts, ok := diffs[xfer.from]
