@@ -37,7 +37,9 @@ import (
 
 const (
 	defaultGasPrice = 2500
+	opBurn          = "burn"
 	opGasFee        = "gas_fee"
+	opMint          = "mint"
 	opTransfer      = "transfer"
 )
 
@@ -51,7 +53,7 @@ var (
 
 var (
 	minGasLimit   = neovm.MIN_TRANSACTION_GAS
-	opTypes       = []string{opGasFee, opTransfer}
+	opTypes       = []string{opBurn, opGasFee, opMint, opTransfer}
 	statusFailed  = "FAILED"
 	statusSuccess = "SUCCESS"
 )
