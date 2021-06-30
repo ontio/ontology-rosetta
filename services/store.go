@@ -33,6 +33,7 @@ import (
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/dgraph-io/badger/v3"
+	"github.com/ontio/ontology-rosetta/chain"
 	"github.com/ontio/ontology-rosetta/lexinum"
 	"github.com/ontio/ontology-rosetta/log"
 	"github.com/ontio/ontology-rosetta/model"
@@ -298,6 +299,118 @@ outer:
 			}
 		}
 	}
+}
+
+func (s *Store) Validate() {
+	height := s.getHeight()
+	latest := actor.GetCurrentBlockHeight()
+	if height != latest {
+		log.Fatalf("Indexed height %d does not match latest synced block %d", height, latest)
+	}
+	log.Infof("Validating store at block height %d", height)
+	var accts []accountInfo
+	total := 0
+	err := s.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 1000
+		opts.Prefix = []byte("a")
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		var ident []byte
+		it.Seek([]byte("b"))
+		log.Info("Finding unique account/contract combinations")
+		for ; it.Valid(); it.Next() {
+			total++
+			key := it.Item().Key()
+			start := -1
+			switch key[1] {
+			case 1:
+				start = 3
+			case 0:
+				start = 22
+			default:
+				return fmt.Errorf("invalid account key found: %q", string(key))
+			}
+			end := -1
+			switch key[start] {
+			case 1:
+				end = start + 2
+			case 0:
+				end = start + 21
+			default:
+				return fmt.Errorf("invalid account key found: %q", string(key))
+			}
+			if bytes.Equal(key[:end], ident) {
+				continue
+			}
+			ident = make([]byte, end)
+			copy(ident, key)
+			ori := make([]byte, len(key))
+			copy(ori, key)
+			accts = append(accts, accountInfo{
+				acct:     decompressAddr(key[1:start]),
+				contract: decompressAddr(key[start:end]),
+				key:      ori,
+				native:   key[start] == 1,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Unable to calculate number of unique accounts: %s", err)
+	}
+	log.Infof("Found %d unique account/contract combinations out of %d", len(accts), total)
+	err = s.db.View(func(txn *badger.Txn) error {
+		var (
+			balance *big.Int
+			err     error
+		)
+		for i, info := range accts {
+			if i%100 == 0 {
+				log.Infof("Validated %d balances of %d", i, len(accts))
+			}
+			if info.native {
+				balance, err = chain.NativeBalanceOf(info.acct, info.contract)
+			} else {
+				balance, err = chain.BalanceOf(info.acct, info.contract)
+			}
+			if err != nil {
+				return fmt.Errorf(
+					"unable to get balanceOf account %s for %s (%d): %s",
+					info.acct.ToBase58(), info.contract.ToHexString(), i, err,
+				)
+			}
+			item, err := txn.Get(info.key)
+			if err != nil {
+				return fmt.Errorf(
+					"unable to get stored balance of account %s for %s (%d): %s",
+					info.acct.ToBase58(), info.contract.ToHexString(), i, err,
+				)
+			}
+			err = item.Value(func(val []byte) error {
+				amount := new(big.Int).SetBytes(val)
+				if amount.Cmp(balance) != 0 {
+					return fmt.Errorf(
+						"balance of account %s for %s (%d) does not match: stored (%s), on chain (%s)",
+						info.acct.ToBase58(), info.contract.ToHexString(), i, amount, balance,
+					)
+				}
+				return nil
+			})
+			if err != nil {
+				if info.native {
+					return err
+				}
+				log.Warnf("Validation failed for non-native OEP4 token: %s", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Unable to validate account balances: %s", err)
+	}
+	log.Infof("Successfully validated all balances")
 }
 
 func (s *Store) checkUnsignedTxHash(hash common.Uint256) (bool, *types.Error) {
@@ -935,6 +1048,30 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 	}
 	xfer.amount = amount
 	return xfer
+}
+
+func decompressAddr(xs []byte) common.Address {
+	switch len(xs) {
+	case 2:
+		switch xs[1] {
+		case 2:
+			return ongAddr
+		case 1:
+			return ontAddr
+		case 7:
+			return govAddr
+		case 0:
+			return nullAddr
+		default:
+			panic(fmt.Errorf("invalid address to decompress: %q", string(xs)))
+		}
+	default:
+		addr, err := common.AddressParseFromBytes(xs[1:])
+		if err != nil {
+			panic(err)
+		}
+		return addr
+	}
 }
 
 func isNull(v []byte) bool {

@@ -73,6 +73,13 @@ type IndexConfig struct {
 	WaitTime  time.Duration
 }
 
+type accountInfo struct {
+	acct     common.Address
+	contract common.Address
+	key      []byte
+	native   bool
+}
+
 type balanceChange struct {
 	diff   *big.Int
 	key    []byte

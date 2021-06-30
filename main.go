@@ -371,7 +371,7 @@ func run(ctx *cli.Context) {
 	cfg := initNodeConfig(ctx)
 	scfg := initServerConfig(ctx)
 	if cliBool(ctx, validateStoreFlag) {
-		runValidateStore(cfg, scfg)
+		runValidateStore(ctx, cfg, scfg)
 	} else if cliBool(ctx, offlineFlag) {
 		runOffline(ctx, cfg, scfg)
 	} else {
@@ -398,15 +398,16 @@ func runOnline(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig)
 	}
 }
 
-func runValidateStore(cfg *config.OntologyConfig, scfg *serverConfig) {
-	ctx := context.Background()
+func runValidateStore(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig) {
+	initLedger(ctx, cfg)
 	store := initStore(cfg, scfg, false)
 	log.Info("Started indexing any missing blocks")
-	store.IndexBlocks(ctx, services.IndexConfig{
+	store.IndexBlocks(context.Background(), services.IndexConfig{
 		ExitEarly: true,
 		WaitTime:  scfg.waitTime,
 	})
 	log.Info("Finished indexing blocks")
+	store.Validate()
 }
 
 func setMaxOpenFiles() {
