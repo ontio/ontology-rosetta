@@ -127,6 +127,12 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, s
 	// only the gas fee transfers would have been indexed for transactions
 	// that failed.
 	if xfer.from != nullAddr {
+		typ := opTransfer
+		if xfer.to == nullAddr {
+			typ = opBurn
+		} else if xfer.isGas {
+			typ = opGasFee
+		}
 		op := &types.Operation{
 			Account: &types.AccountIdentifier{
 				Address: xfer.from.ToBase58(),
@@ -138,7 +144,7 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, s
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: int64(len(ops)),
 			},
-			Type: opTransfer,
+			Type: typ,
 		}
 		if setStatus {
 			op.Status = &statusSuccess
@@ -148,13 +154,16 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, s
 				Address: xfer.contract.ToHexString(),
 			}
 		}
-		if xfer.isGas {
-			op.Type = opGasFee
-		}
 		related = true
 		ops = append(ops, op)
 	}
 	if xfer.to != nullAddr {
+		typ := opTransfer
+		if xfer.from == nullAddr {
+			typ = opMint
+		} else if xfer.isGas {
+			typ = opGasFee
+		}
 		op := &types.Operation{
 			Account: &types.AccountIdentifier{
 				Address: xfer.to.ToBase58(),
@@ -166,7 +175,7 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, s
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: int64(len(ops)),
 			},
-			Type: opTransfer,
+			Type: typ,
 		}
 		if setStatus {
 			op.Status = &statusSuccess
@@ -175,9 +184,6 @@ func (s *service) appendOperations(ops []*types.Operation, xfer *transferInfo, s
 			op.Account.SubAccount = &types.SubAccountIdentifier{
 				Address: xfer.contract.ToHexString(),
 			}
-		}
-		if xfer.isGas {
-			op.Type = opGasFee
 		}
 		if related {
 			op.RelatedOperations = []*types.OperationIdentifier{
