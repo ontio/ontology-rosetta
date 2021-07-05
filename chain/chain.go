@@ -31,7 +31,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/states"
 )
 
-// BalanceOf calls the contract's balanceOf method with the given account.
+// BalanceOf calls a contract's balanceOf method for the given account.
 func BalanceOf(acct common.Address, contract common.Address) (*big.Int, error) {
 	r, err := Exec(contract, "balanceOf", []interface{}{acct})
 	if err != nil {
@@ -51,9 +51,42 @@ func BalanceOf(acct common.Address, contract common.Address) (*big.Int, error) {
 	return common.BigIntFromNeoBytes(val), nil
 }
 
-// Exec executes a method on the contract with the given parameters.
+// Exec executes a method on a contract with the given parameters.
 func Exec(contract common.Address, method string, params []interface{}) (*states.PreExecResult, error) {
 	mut, err := hcommon.NewNeovmInvokeTransaction(0, 0, contract, []interface{}{method, params})
+	if err != nil {
+		return nil, err
+	}
+	txn, err := mut.IntoImmutable()
+	if err != nil {
+		return nil, err
+	}
+	return ledger.DefLedger.PreExecuteContract(txn)
+}
+
+// NativeBalanceOf calls a contract's balanceOf method for the given account.
+func NativeBalanceOf(acct common.Address, contract common.Address) (*big.Int, error) {
+	r, err := NativeExec(contract, "balanceOf", []interface{}{acct[:]})
+	if err != nil {
+		return nil, err
+	}
+	raw, ok := r.Result.(string)
+	if !ok {
+		return nil, fmt.Errorf(
+			`chain: unexpected "balanceOf" response type: %s`,
+			reflect.TypeOf(r),
+		)
+	}
+	val, err := hex.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+	return common.BigIntFromNeoBytes(val), nil
+}
+
+// NativeExec executes a method on a native contract with the given parameters.
+func NativeExec(contract common.Address, method string, params []interface{}) (*states.PreExecResult, error) {
+	mut, err := hcommon.NewNativeInvokeTransaction(0, 0, contract, 0, method, params)
 	if err != nil {
 		return nil, err
 	}

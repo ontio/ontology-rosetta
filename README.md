@@ -49,6 +49,17 @@ Objects within the `oep4_tokens` array must follow this structure:
 }
 ```
 
+## Dev Notes
+
+When changes are made to the internal `services/store.go` code, it should be
+verified by:
+
+* First running the server so that the network is synced to a reasonable depth —
+  as close to tip as possible.
+
+* Re-running the server with the `--validate-store` option to check that the
+  indexed store state matches up with the on chain state.
+
 ## Rosetta API
 
 ### Network
