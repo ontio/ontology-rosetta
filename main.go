@@ -43,14 +43,10 @@ import (
 	"github.com/ontio/ontology/core/genesis"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/events"
-	"github.com/ontio/ontology/http/base/actor"
+	bactor "github.com/ontio/ontology/http/base/actor"
 	"github.com/ontio/ontology/p2pserver"
-	"github.com/ontio/ontology/p2pserver/actor/req"
 	"github.com/ontio/ontology/txnpool"
-	tc "github.com/ontio/ontology/txnpool/common"
 	"github.com/ontio/ontology/txnpool/proc"
-	"github.com/ontio/ontology/validator/stateful"
-	"github.com/ontio/ontology/validator/stateless"
 	"github.com/urfave/cli"
 )
 
@@ -148,10 +144,16 @@ func cliBool(ctx *cli.Context, flag cli.Flag) bool {
 
 func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 	events.Init()
-	ldg, err := ledger.NewLedger(
-		filepath.Join(cfg.Common.DataDir, cfg.P2PNode.NetworkName),
-		config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId),
-	)
+	bookKeepers, err := config.DefConfig.GetBookkeepers()
+	if err != nil {
+		log.Errorf("GetBookkeepers error: %s", err)
+	}
+	genesisConfig := config.DefConfig.Genesis
+	genesisBlock, err := genesis.BuildGenesisBlock(bookKeepers, genesisConfig)
+	if err != nil {
+		log.Errorf("genesisBlock error %s", err)
+	}
+	ldg, err := ledger.InitLedger(cfg.Common.DataDir, config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId), bookKeepers, genesisBlock)
 	if err != nil {
 		log.Fatalf("Failed to open ledger: %s", err)
 	}
@@ -161,18 +163,6 @@ func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 			log.Errorf("Failed to close ledger: %s", err)
 		}
 	})
-	bk, err := cfg.GetBookkeepers()
-	if err != nil {
-		log.Fatalf("Failed to get the bookkeeper config: %s", err)
-	}
-	genesis, err := genesis.BuildGenesisBlock(bk, cfg.Genesis)
-	if err != nil {
-		log.Fatalf("Failed to build the genesis block: %s", err)
-	}
-	ledger.DefLedger = ldg
-	if err := ldg.Init(bk, genesis); err != nil {
-		log.Fatalf("Failed to initialize the ledger: %s", err)
-	}
 	log.Info("Ledger init success")
 	return ldg
 }
@@ -195,24 +185,23 @@ func initLog(ctx *cli.Context) {
 	}
 }
 
-func initNode(ctx *cli.Context, cfg *config.OntologyConfig, txpool *proc.TXPoolServer) *p2pserver.P2PServer {
+func initP2PNode(ctx *cli.Context, cfg *config.OntologyConfig, txpoolSvr *proc.TXPoolServer) *p2pserver.P2PServer {
 	if cfg.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
 		return nil
 	}
-	node, err := p2pserver.NewServer(nil)
+	p2p, err := p2pserver.NewServer(nil,proc.NewTxPoolService(txpoolSvr))
 	if err != nil {
 		log.Fatalf("Failed to create Node P2P server: %s", err)
 	}
-	err = node.Start()
+	err = p2p.Start()
 	if err != nil {
-		log.Fatalf("Failed to start the Node P2P service: %s", err)
+		log.Fatalf("p2p service start error: %s", err)
 	}
-	txpool.Net = node.GetNetwork()
-	req.SetTxnPoolPid(txpool.GetPID(tc.TxActor))
-	actor.SetNetServer(node.GetNetwork())
-	node.WaitForPeersStart()
-	log.Info("Node init success")
-	return node
+	txpoolSvr.Net = p2p.GetNetwork()
+	bactor.SetNetServer(p2p.GetNetwork())
+	p2p.WaitForPeersStart()
+	log.Infof("P2P init success")
+	return p2p
 }
 
 func initNodeConfig(ctx *cli.Context) *config.OntologyConfig {
@@ -345,24 +334,19 @@ func initStore(cfg *config.OntologyConfig, scfg *serverConfig, offline bool) *se
 }
 
 func initTxPool(ctx *cli.Context) *proc.TXPoolServer {
-	actor.DisableSyncVerifyTx = cliBool(ctx, utils.DisableSyncVerifyTxFlag)
-	txpool, err := txnpool.StartTxnPoolServer(
-		cliBool(ctx, utils.TxpoolPreExecDisableFlag),
-		cliBool(ctx, utils.DisableBroadcastNetTxFlag),
-	)
+	disablePreExec := ctx.GlobalBool(utils.GetFlagName(utils.TxpoolPreExecDisableFlag))
+	bactor.DisableSyncVerifyTx = ctx.GlobalBool(utils.GetFlagName(utils.DisableSyncVerifyTxFlag))
+	disableBroadcastNetTx := ctx.GlobalBool(utils.GetFlagName(utils.DisableBroadcastNetTxFlag))
+	txPoolServer, err := txnpool.StartTxnPoolServer(disablePreExec, disableBroadcastNetTx)
 	if err != nil {
-		log.Fatalf("Failed to start the TxPool server: %s", err)
+		log.Fatalf("init txpool error: %s", err)
 	}
-	stlValidator, _ := stateless.NewValidator("stateless_validator")
-	stlValidator.Register(txpool.GetPID(tc.VerifyRspActor))
-	stlValidator2, _ := stateless.NewValidator("stateless_validator2")
-	stlValidator2.Register(txpool.GetPID(tc.VerifyRspActor))
-	stfValidator, _ := stateful.NewValidator("stateful_validator")
-	stfValidator.Register(txpool.GetPID(tc.VerifyRspActor))
-	actor.SetTxnPoolPid(txpool.GetPID(tc.TxPoolActor))
-	actor.SetTxPid(txpool.GetPID(tc.TxActor))
-	log.Info("TxPool init success")
-	return txpool
+
+	bactor.SetTxnPoolPid(txPoolServer.GetPID())
+	bactor.SetTxPoolService(proc.NewTxPoolService(txPoolServer))
+
+	log.Infof("TxPool init success")
+	return txPoolServer
 }
 
 func run(ctx *cli.Context) {
@@ -387,7 +371,7 @@ func runOffline(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig
 func runOnline(ctx *cli.Context, cfg *config.OntologyConfig, scfg *serverConfig) {
 	ldg := initLedger(ctx, cfg)
 	txpool := initTxPool(ctx)
-	node := initNode(ctx, cfg, txpool)
+	node := initP2PNode(ctx, cfg, txpool)
 	initServer(ctx, cfg, scfg, node, false)
 	ticker := time.NewTicker(config.DEFAULT_GEN_BLOCK_TIME * time.Second)
 	for range ticker.C {
