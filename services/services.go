@@ -206,6 +206,6 @@ func networkName() string {
 	case config.NETWORK_NAME_SOLO_NET:
 		return "privatenet"
 	default:
-		return "unknown"
+		return "testnet"
 	}
 }
