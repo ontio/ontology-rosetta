@@ -31,8 +31,8 @@ func (s *service) Mempool(ctx context.Context, r *types.NetworkRequest) (*types.
 	if s.offline {
 		return nil, errOfflineMode
 	}
-	txs := []*types.TransactionIdentifier{}
-	for hash := range actor.GetTxsFromPool(false) {
+	txs := make([]*types.TransactionIdentifier, 0)
+	for _, hash := range actor.GetTxnHashList() {
 		txs = append(txs, &types.TransactionIdentifier{
 			Hash: hash.ToHexString(),
 		})

@@ -189,7 +189,7 @@ func initP2PNode(ctx *cli.Context, cfg *config.OntologyConfig, txpoolSvr *proc.T
 	if cfg.Genesis.ConsensusType == config.CONSENSUS_TYPE_SOLO {
 		return nil
 	}
-	p2p, err := p2pserver.NewServer(nil,proc.NewTxPoolService(txpoolSvr))
+	p2p, err := p2pserver.NewServer(nil, proc.NewTxPoolService(txpoolSvr))
 	if err != nil {
 		log.Fatalf("Failed to create Node P2P server: %s", err)
 	}
