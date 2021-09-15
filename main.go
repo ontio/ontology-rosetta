@@ -164,6 +164,7 @@ func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 		}
 	})
 	log.Info("Ledger init success")
+	ledger.DefLedger = ldg
 	return ldg
 }
 
