@@ -82,6 +82,7 @@ type Store struct {
 	heightSynced  *int64
 	mu            sync.RWMutex // protects heightIndex, heightSynced
 	tokens        map[common.Address]*currencyInfo
+	parsedAbi     abi.ABI
 }
 
 // Close closes the store database. It must be called to ensure all pending
@@ -189,12 +190,12 @@ outer:
 					//check evm ong event log
 					isEvm, eventLog := checkEvmEventLog(evt)
 					if isEvm {
-						xfer, err := parseEvmOngTransferLog(eventLog)
+						xfer, err := parseEvmOngTransferLog(eventLog, s.parsedAbi)
 						if err != nil {
-							log.Warnf("prase evm ong err:%s,height:%d,txhash:%s", err, info.TxHash.ToHexString(), height)
+							log.Warnf("parse evm ong err:%s,height:%d,txhash:%s", err, info.TxHash.ToHexString(), height)
 							continue
 						}
-						balanceCal(xfer, evt, diffs, txn.Transfers)
+						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					} else {
 						xfer := decodeTransfer(height, info, evt)
 						if xfer == nil {
@@ -224,7 +225,7 @@ outer:
 								xfer.isGas = false
 							}
 						}
-						balanceCal(xfer, evt, diffs, txn.Transfers)
+						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					}
 				}
 				// NOTE(tav): We log the cases where a transfer event wasn't
@@ -838,11 +839,13 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 		)
 	}
 	synced := int64(actor.GetCurrentBlockHeight())
+	parsedAbi, _ := abi.JSON(strings.NewReader(ERC20ABI))
 	return &Store{
 		db:            db,
 		heightIndexed: indexed,
 		heightSynced:  &synced,
 		tokens:        tokens,
+		parsedAbi:     parsedAbi,
 	}, nil
 }
 
@@ -1037,15 +1040,14 @@ func checkEvmEventLog(evt *event.NotifyEventInfo) (bool, *ctypes.StorageLog) {
 	}
 	return true, ethLog
 }
-func parseEvmOngTransferLog(ethLog *ctypes.StorageLog) (*transfer, error) {
+func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI) (*transfer, error) {
 	ongLog := types2.Log{
 		Address: ethLog.Address,
 		Topics:  ethLog.Topics,
 		Data:    ethLog.Data,
 	}
 	if ongLog.Address.Hex() == ONG_ADDR {
-		parsed, _ := abi.JSON(strings.NewReader(ERC20ABI))
-		nbc := bind.NewBoundContract(ethcom.Address{}, parsed, nil, nil, nil)
+		nbc := bind.NewBoundContract(ethcom.Address{}, parsedAbi, nil, nil, nil)
 		tf := new(ERC20Transfer)
 		err := nbc.UnpackLog(tf, "Transfer", ongLog)
 		if err != nil {
@@ -1073,7 +1075,7 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog) (*transfer, error) {
 	}
 }
 
-func balanceCal(xfer *transfer, evt *event.NotifyEventInfo, diffs map[common.Address]map[common.Address]*big.Int, transfers []*model.Transfer) {
+func balanceCal(xfer *transfer, evt *event.NotifyEventInfo, diffs map[common.Address]map[common.Address]*big.Int) *model.Transfer {
 	if xfer.from != nullAddr {
 		accts, ok := diffs[xfer.from]
 		if ok {
@@ -1104,14 +1106,13 @@ func balanceCal(xfer *transfer, evt *event.NotifyEventInfo, diffs map[common.Add
 			}
 		}
 	}
-	transfers = append(transfers, &model.Transfer{
+	return &model.Transfer{
 		Amount:   xfer.amount.Bytes(),
 		Contract: addr2slice(evt.ContractAddress),
 		From:     addr2slice(xfer.from),
 		IsGas:    xfer.isGas,
 		To:       addr2slice(xfer.to),
-	})
-
+	}
 }
 func decompressAddr(xs []byte) common.Address {
 	switch len(xs) {
