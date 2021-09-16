@@ -28,11 +28,16 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/dgraph-io/badger/v3"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	ethcom "github.com/ethereum/go-ethereum/common"
+	types2 "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ontio/ontology-rosetta/chain"
 	"github.com/ontio/ontology-rosetta/lexinum"
 	"github.com/ontio/ontology-rosetta/log"
@@ -181,71 +186,85 @@ outer:
 					if !ok {
 						continue
 					}
-					xfer := decodeTransfer(height, info, evt)
-					if xfer == nil {
-						log.Warnf(
-							"No transfer detected for state %#v in transaction %s at height %d",
-							evt.States, info.TxHash.ToHexString(), height,
-						)
-						continue
-					}
-					if failed {
-						if evt.ContractAddress != ongAddr {
+					//check evm ong event log
+					isEvm, eventLog := checkEvmEventLog(evt)
+					if isEvm {
+						xfer, err := parseEvmOngTransferLog(eventLog)
+						if err != nil {
+							log.Warnf("prase evm ong err:%s,height:%d,txhash:%s", err, info.TxHash.ToHexString(), height)
 							continue
 						}
-						// NOTE(tav): We skip additional transfer events on
-						// failed transactions if we've already matched the gas
-						// fee.
+						balanceCal(xfer, evt, diffs, txn.Transfers)
+					} else {
+						xfer := decodeTransfer(height, info, evt)
+						if xfer == nil {
+							log.Warnf(
+								"No transfer detected for state %#v in transaction %s at height %d",
+								evt.States, info.TxHash.ToHexString(), height,
+							)
+							continue
+						}
+						if failed {
+							if evt.ContractAddress != ongAddr {
+								continue
+							}
+							// NOTE(tav): We skip additional transfer events on
+							// failed transactions if we've already matched the gas
+							// fee.
+							if gasVerified {
+								continue
+							}
+						}
 						if gasVerified {
-							continue
-						}
-					}
-					if gasVerified {
-						xfer.isGas = false
-					} else if xfer.isGas {
-						if ori.Payer == xfer.from {
-							gasVerified = true
-						} else {
 							xfer.isGas = false
-						}
-					}
-					if xfer.from != nullAddr {
-						accts, ok := diffs[xfer.from]
-						if ok {
-							balance, ok := accts[evt.ContractAddress]
-							if ok {
-								accts[evt.ContractAddress] = balance.Sub(balance, xfer.amount)
+						} else if xfer.isGas {
+							if ori.Payer == xfer.from {
+								gasVerified = true
 							} else {
-								accts[evt.ContractAddress] = (&big.Int{}).Neg(xfer.amount)
-							}
-						} else {
-							diffs[xfer.from] = map[common.Address]*big.Int{
-								evt.ContractAddress: (&big.Int{}).Neg(xfer.amount),
+								xfer.isGas = false
 							}
 						}
-					}
-					if xfer.to != nullAddr {
-						accts, ok := diffs[xfer.to]
-						if ok {
-							balance, ok := accts[evt.ContractAddress]
-							if ok {
-								accts[evt.ContractAddress] = balance.Add(balance, xfer.amount)
-							} else {
-								accts[evt.ContractAddress] = xfer.amount
+						balanceCal(xfer, evt, diffs, txn.Transfers)
+						/*
+							if xfer.from != nullAddr {
+								accts, ok := diffs[xfer.from]
+								if ok {
+									balance, ok := accts[evt.ContractAddress]
+									if ok {
+										accts[evt.ContractAddress] = balance.Sub(balance, xfer.amount)
+									} else {
+										accts[evt.ContractAddress] = (&big.Int{}).Neg(xfer.amount)
+									}
+								} else {
+									diffs[xfer.from] = map[common.Address]*big.Int{
+										evt.ContractAddress: (&big.Int{}).Neg(xfer.amount),
+									}
+								}
 							}
-						} else {
-							diffs[xfer.to] = map[common.Address]*big.Int{
-								evt.ContractAddress: xfer.amount,
+							if xfer.to != nullAddr {
+								accts, ok := diffs[xfer.to]
+								if ok {
+									balance, ok := accts[evt.ContractAddress]
+									if ok {
+										accts[evt.ContractAddress] = balance.Add(balance, xfer.amount)
+									} else {
+										accts[evt.ContractAddress] = xfer.amount
+									}
+								} else {
+									diffs[xfer.to] = map[common.Address]*big.Int{
+										evt.ContractAddress: xfer.amount,
+									}
+								}
 							}
-						}
+							txn.Transfers = append(txn.Transfers, &model.Transfer{
+								Amount:   xfer.amount.Bytes(),
+								Contract: addr2slice(evt.ContractAddress),
+								From:     addr2slice(xfer.from),
+								IsGas:    xfer.isGas,
+								To:       addr2slice(xfer.to),
+							})
+						*/
 					}
-					txn.Transfers = append(txn.Transfers, &model.Transfer{
-						Amount:   xfer.amount.Bytes(),
-						Contract: addr2slice(evt.ContractAddress),
-						From:     addr2slice(xfer.from),
-						IsGas:    xfer.isGas,
-						To:       addr2slice(xfer.to),
-					})
 				}
 				// NOTE(tav): We log the cases where a transfer event wasn't
 				// emitted for used gas.
@@ -1050,6 +1069,89 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 	return xfer
 }
 
+func checkEvmEventLog(evt *event.NotifyEventInfo) (bool, *ctypes.StorageLog) {
+	ethLog, err := event.NotifyEventInfoToEvmLog(evt)
+	if err != nil {
+		return false, nil
+	}
+	return true, ethLog
+}
+func parseEvmOngTransferLog(ethLog *ctypes.StorageLog) (*transfer, error) {
+	ongLog := types2.Log{
+		Address: ethLog.Address,
+		Topics:  ethLog.Topics,
+		Data:    ethLog.Data,
+	}
+	if ongLog.Address.Hex() == ONG_ADDR {
+		parsed, _ := abi.JSON(strings.NewReader(ERC20ABI))
+		nbc := bind.NewBoundContract(ethcom.Address{}, parsed, nil, nil, nil)
+		tf := new(ERC20Transfer)
+		err := nbc.UnpackLog(tf, "Transfer", ongLog)
+		if err != nil {
+			return nil, err
+		}
+		from, err := common.AddressFromHexString(tf.From.Hex())
+		if err != nil {
+			return nil, err
+		}
+		to, err := common.AddressFromHexString(tf.To.Hex())
+		if err != nil {
+			return nil, err
+		}
+		xfer := &transfer{
+			amount: tf.Value,
+			from:   from,
+			to:     to,
+		}
+		if tf.To.Hex() == GOV_ADDR {
+			xfer.isGas = true
+		}
+		return xfer, nil
+	} else {
+		return nil, fmt.Errorf("ont ong transfer")
+	}
+}
+
+func balanceCal(xfer *transfer, evt *event.NotifyEventInfo, diffs map[common.Address]map[common.Address]*big.Int, transfers []*model.Transfer) {
+	if xfer.from != nullAddr {
+		accts, ok := diffs[xfer.from]
+		if ok {
+			balance, ok := accts[evt.ContractAddress]
+			if ok {
+				accts[evt.ContractAddress] = balance.Sub(balance, xfer.amount)
+			} else {
+				accts[evt.ContractAddress] = (&big.Int{}).Neg(xfer.amount)
+			}
+		} else {
+			diffs[xfer.from] = map[common.Address]*big.Int{
+				evt.ContractAddress: (&big.Int{}).Neg(xfer.amount),
+			}
+		}
+	}
+	if xfer.to != nullAddr {
+		accts, ok := diffs[xfer.to]
+		if ok {
+			balance, ok := accts[evt.ContractAddress]
+			if ok {
+				accts[evt.ContractAddress] = balance.Add(balance, xfer.amount)
+			} else {
+				accts[evt.ContractAddress] = xfer.amount
+			}
+		} else {
+			diffs[xfer.to] = map[common.Address]*big.Int{
+				evt.ContractAddress: xfer.amount,
+			}
+		}
+	}
+	transfers = append(transfers, &model.Transfer{
+		Amount:   xfer.amount.Bytes(),
+		Contract: addr2slice(evt.ContractAddress),
+		From:     addr2slice(xfer.from),
+		IsGas:    xfer.isGas,
+		To:       addr2slice(xfer.to),
+	})
+
+}
 func decompressAddr(xs []byte) common.Address {
 	switch len(xs) {
 	case 2:
