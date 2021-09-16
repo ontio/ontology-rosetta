@@ -190,7 +190,7 @@ outer:
 					//check evm ong event log
 					isEvm, eventLog := checkEvmEventLog(evt)
 					if isEvm {
-						xfer, err := parseEvmOngTransferLog(eventLog, s.parsedAbi)
+						xfer, err := parseEvmOngTransferLog(eventLog, s.parsedAbi, info.GasConsumed)
 						if err != nil {
 							log.Warnf("parse evm ong err:%s,height:%d,txhash:%s", err, info.TxHash.ToHexString(), height)
 							continue
@@ -1040,7 +1040,7 @@ func checkEvmEventLog(evt *event.NotifyEventInfo) (bool, *ctypes.StorageLog) {
 	}
 	return true, ethLog
 }
-func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI) (*transfer, error) {
+func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI, gasConsumed uint64) (*transfer, error) {
 	ongLog := types2.Log{
 		Address: ethLog.Address,
 		Topics:  ethLog.Topics,
@@ -1066,7 +1066,7 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI) (*tran
 			from:   from,
 			to:     to,
 		}
-		if tf.To == GOV_ADDR {
+		if tf.To == GOV_ADDR && tf.Value.Uint64() == gasConsumed {
 			xfer.isGas = true
 		}
 		return xfer, nil
