@@ -1046,7 +1046,7 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI) (*tran
 		Topics:  ethLog.Topics,
 		Data:    ethLog.Data,
 	}
-	if ongLog.Address.Hex() == ONG_ADDR {
+	if ongLog.Address == ONG_ADDR {
 		nbc := bind.NewBoundContract(ethcom.Address{}, parsedAbi, nil, nil, nil)
 		tf := new(ERC20Transfer)
 		err := nbc.UnpackLog(tf, "Transfer", ongLog)
@@ -1066,7 +1066,7 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI) (*tran
 			from:   from,
 			to:     to,
 		}
-		if tf.To.Hex() == GOV_ADDR {
+		if tf.To == GOV_ADDR {
 			xfer.isGas = true
 		}
 		return xfer, nil

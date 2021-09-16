@@ -51,8 +51,8 @@ var (
 	nullAddr = mustHexAddr("0000000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM
 	ongAddr  = mustHexAddr("0200000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhfRZMHJ
 	ontAddr  = mustHexAddr("0100000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV
-	ONG_ADDR = "0x0000000000000000000000000000000000000002"            //evm
-	GOV_ADDR = "0x0000000000000000000000000000000000000007"            //evm
+	ONG_ADDR = mustEthHexAddr("0x0000000000000000000000000000000000000002")            //evm
+	GOV_ADDR = mustEthHexAddr("0x0000000000000000000000000000000000000007")           //evm
 )
 
 // ERC20ABI is the input ABI used to generate the binding from.
@@ -209,6 +209,10 @@ func mustHexAddr(s string) common.Address {
 		panic(fmt.Errorf("services: invalid hex address %q: %s", s, err))
 	}
 	return addr
+}
+
+func mustEthHexAddr(s string) ethcom.Address {
+	return ethcom.HexToAddress(s)
 }
 
 func networkName() string {
