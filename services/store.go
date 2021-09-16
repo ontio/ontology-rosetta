@@ -225,45 +225,6 @@ outer:
 							}
 						}
 						balanceCal(xfer, evt, diffs, txn.Transfers)
-						/*
-							if xfer.from != nullAddr {
-								accts, ok := diffs[xfer.from]
-								if ok {
-									balance, ok := accts[evt.ContractAddress]
-									if ok {
-										accts[evt.ContractAddress] = balance.Sub(balance, xfer.amount)
-									} else {
-										accts[evt.ContractAddress] = (&big.Int{}).Neg(xfer.amount)
-									}
-								} else {
-									diffs[xfer.from] = map[common.Address]*big.Int{
-										evt.ContractAddress: (&big.Int{}).Neg(xfer.amount),
-									}
-								}
-							}
-							if xfer.to != nullAddr {
-								accts, ok := diffs[xfer.to]
-								if ok {
-									balance, ok := accts[evt.ContractAddress]
-									if ok {
-										accts[evt.ContractAddress] = balance.Add(balance, xfer.amount)
-									} else {
-										accts[evt.ContractAddress] = xfer.amount
-									}
-								} else {
-									diffs[xfer.to] = map[common.Address]*big.Int{
-										evt.ContractAddress: xfer.amount,
-									}
-								}
-							}
-							txn.Transfers = append(txn.Transfers, &model.Transfer{
-								Amount:   xfer.amount.Bytes(),
-								Contract: addr2slice(evt.ContractAddress),
-								From:     addr2slice(xfer.from),
-								IsGas:    xfer.isGas,
-								To:       addr2slice(xfer.to),
-							})
-						*/
 					}
 				}
 				// NOTE(tav): We log the cases where a transfer event wasn't
