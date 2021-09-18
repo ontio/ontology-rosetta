@@ -192,9 +192,15 @@ outer:
 					if isEvm {
 						xfer, err := parseEvmOngTransferLog(eventLog, s.parsedAbi, info.GasConsumed)
 						if err != nil {
-							log.Warnf("parse evm ong err:%s,height:%d,txhash:%s", err, info.TxHash.ToHexString(), height)
+							log.Warnf("parse evm ong err:%s,height:%d,txhash:%s", err, height, info.TxHash.ToHexString())
 							continue
 						}
+						gasverified, isgas, isContinue := checkgasVerified(evt.ContractAddress, ori.Payer, xfer.from, failed, gasVerified, xfer.isGas)
+						if isContinue {
+							continue
+						}
+						gasVerified = gasverified
+						xfer.isGas = isgas
 						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					} else {
 						xfer := decodeTransfer(height, info, evt)
@@ -205,26 +211,12 @@ outer:
 							)
 							continue
 						}
-						if failed {
-							if evt.ContractAddress != ongAddr {
-								continue
-							}
-							// NOTE(tav): We skip additional transfer events on
-							// failed transactions if we've already matched the gas
-							// fee.
-							if gasVerified {
-								continue
-							}
+						gasverified, isgas, isContinue := checkgasVerified(evt.ContractAddress, ori.Payer, xfer.from, failed, gasVerified, xfer.isGas)
+						if isContinue {
+							continue
 						}
-						if gasVerified {
-							xfer.isGas = false
-						} else if xfer.isGas {
-							if ori.Payer == xfer.from {
-								gasVerified = true
-							} else {
-								xfer.isGas = false
-							}
-						}
+						gasVerified = gasverified
+						xfer.isGas = isgas
 						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					}
 				}
@@ -1053,25 +1045,17 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI, gasCon
 		if err != nil {
 			return nil, err
 		}
-		from, err := common.AddressFromHexString(tf.From.Hex())
-		if err != nil {
-			return nil, err
-		}
-		to, err := common.AddressFromHexString(tf.To.Hex())
-		if err != nil {
-			return nil, err
-		}
 		xfer := &transfer{
 			amount: tf.Value,
-			from:   from,
-			to:     to,
+			from:   common.Address(tf.From),
+			to:     common.Address(tf.To),
 		}
 		if tf.To == GOV_ADDR && tf.Value.Uint64() == gasConsumed {
 			xfer.isGas = true
 		}
 		return xfer, nil
 	} else {
-		return nil, fmt.Errorf("ont ong transfer")
+		return nil, fmt.Errorf("parse evm ong transfer error")
 	}
 }
 
@@ -1113,6 +1097,31 @@ func balanceCal(xfer *transfer, evt *event.NotifyEventInfo, diffs map[common.Add
 		IsGas:    xfer.isGas,
 		To:       addr2slice(xfer.to),
 	}
+}
+
+//return gasVerified,isGas,isContinue
+func checkgasVerified(contractAddress, payer, from common.Address, failed, gasVerified, isGas bool) (bool, bool, bool) {
+	if failed {
+		if contractAddress != ongAddr {
+			return false, false, true
+		}
+		// NOTE(tav): We skip additional transfer events on
+		// failed transactions if we've already matched the gas
+		// fee.
+		if gasVerified {
+			return false, false, true
+		}
+	}
+	if gasVerified {
+		return gasVerified, false, false
+	} else if isGas {
+		if payer == from {
+			return true, isGas, false
+		} else {
+			return gasVerified, false, false
+		}
+	}
+	return false, false, false
 }
 func decompressAddr(xs []byte) common.Address {
 	switch len(xs) {
