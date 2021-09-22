@@ -28,9 +28,11 @@ import (
 	"github.com/coinbase/rosetta-sdk-go/asserter"
 	"github.com/coinbase/rosetta-sdk-go/server"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	ethcom "github.com/ethereum/go-ethereum/common"
 	"github.com/ontio/ontology-rosetta/model"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
+	ctypes "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/p2pserver"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 )
@@ -45,11 +47,23 @@ const (
 
 var (
 	// The genesis block mints 10^9 ONT (decimals 0) and 10^9 ONG (decimals 9).
-	govAddr  = mustHexAddr("0700000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK
-	nullAddr = mustHexAddr("0000000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM
-	ongAddr  = mustHexAddr("0200000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhfRZMHJ
-	ontAddr  = mustHexAddr("0100000000000000000000000000000000000000") // AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV
+	govAddr  = mustHexAddr("0700000000000000000000000000000000000000")      // AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK
+	nullAddr = mustHexAddr("0000000000000000000000000000000000000000")      // AFmseVrdL9f9oyCzZefL9tG6UbvhPbdYzM
+	ongAddr  = mustHexAddr("0200000000000000000000000000000000000000")      // AFmseVrdL9f9oyCzZefL9tG6UbvhfRZMHJ
+	ontAddr  = mustHexAddr("0100000000000000000000000000000000000000")      // AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV
+	ONG_ADDR = mustEthHexAddr("0x0000000000000000000000000000000000000002") //evm
+	GOV_ADDR = mustEthHexAddr("0x0000000000000000000000000000000000000007") //evm
 )
+
+// ERC20ABI is the input ABI used to generate the binding from.
+const ERC20ABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"}]"
+
+type ERC20Transfer struct {
+	From  ethcom.Address
+	To    ethcom.Address
+	Value *big.Int
+	Raw   ctypes.Log
+}
 
 var (
 	minGasLimit   = neovm.MIN_TRANSACTION_GAS
@@ -195,6 +209,10 @@ func mustHexAddr(s string) common.Address {
 		panic(fmt.Errorf("services: invalid hex address %q: %s", s, err))
 	}
 	return addr
+}
+
+func mustEthHexAddr(s string) ethcom.Address {
+	return ethcom.HexToAddress(s)
 }
 
 func networkName() string {
