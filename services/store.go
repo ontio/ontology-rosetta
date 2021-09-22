@@ -188,37 +188,30 @@ outer:
 						continue
 					}
 					//check evm ong event log
+					var xfer *transfer
 					isEvm, eventLog := checkEvmEventLog(evt)
 					if isEvm {
-						xfer, err := parseEvmOngTransferLog(eventLog, s.parsedAbi, info.GasConsumed)
+						xfer, err = parseEvmOngTransferLog(eventLog, s.parsedAbi, info.GasConsumed)
 						if err != nil {
 							log.Warnf("parse evm ong err:%s,height:%d,txhash:%s", err, height, info.TxHash.ToHexString())
 							continue
 						}
-						gasverified, isgas, isContinue := checkgasVerified(evt.ContractAddress, ori.Payer, xfer.from, failed, gasVerified, xfer.isGas)
-						if isContinue {
-							continue
-						}
-						gasVerified = gasverified
-						xfer.isGas = isgas
-						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					} else {
-						xfer := decodeTransfer(height, info, evt)
+						xfer = decodeTransfer(height, info, evt)
 						if xfer == nil {
 							log.Warnf(
 								"No transfer detected for state %#v in transaction %s at height %d",
-								evt.States, info.TxHash.ToHexString(), height,
-							)
+								evt.States, info.TxHash.ToHexString(), height)
 							continue
 						}
-						gasverified, isgas, isContinue := checkgasVerified(evt.ContractAddress, ori.Payer, xfer.from, failed, gasVerified, xfer.isGas)
-						if isContinue {
-							continue
-						}
-						gasVerified = gasverified
-						xfer.isGas = isgas
-						txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 					}
+					gasverified, isgas, isContinue := checkgasVerified(evt.ContractAddress, ori.Payer, xfer.from, failed, gasVerified, xfer.isGas)
+					if isContinue {
+						continue
+					}
+					gasVerified = gasverified
+					xfer.isGas = isgas
+					txn.Transfers = append(txn.Transfers, balanceCal(xfer, evt, diffs))
 				}
 				// NOTE(tav): We log the cases where a transfer event wasn't
 				// emitted for used gas.
