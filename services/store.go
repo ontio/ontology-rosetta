@@ -888,9 +888,9 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 		)
 		return nil
 	}
-	if len(elems) != 4 {
+	if len(elems) != 4 || len(elems) != 5 {
 		log.Warnf(
-			"Ignoring event for txn %s at height %d: len(state) != 4",
+			"Ignoring event for txn %s at height %d: len(state) != 4 or len(state) != 5",
 			info.TxHash.ToHexString(), height,
 		)
 		return nil
@@ -949,6 +949,41 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 				"Transfer amount for txn %s at height %d is negative: %d",
 				info.TxHash.ToHexString(), height, amount,
 			)
+		}
+		if amount%constants.GWei != 0 {
+			rv := reflect.ValueOf(elems[4])
+			if rv.Type() != jsonNumberType {
+				log.Errorf(
+					`Unexpected datatype for "value" for txn %s at height %d: %v`,
+					info.TxHash.ToHexString(), height, rv.Type(),
+				)
+				return nil
+			}
+			raw := rv.Interface().(json.Number)
+			value, err := raw.Int64()
+			if err != nil {
+				log.Warnf(
+					"Unable to decode transfer value %q for txn %s at height %d: %s",
+					raw, info.TxHash.ToHexString(), height, err,
+				)
+				return nil
+			}
+			if value < 0 {
+				log.Fatalf(
+					"Transfer amount for txn %s at height %d is negative: %d",
+					info.TxHash.ToHexString(), height, value,
+				)
+			}
+			totalAmount := &big.Int{}
+			xfer := &transfer{
+				amount: totalAmount.Add(big.NewInt(amount), big.NewInt(value)),
+				from:   from,
+				to:     to,
+			}
+			if evt.ContractAddress == ongAddr && to == govAddr && uint64(amount) == info.GasConsumed {
+				xfer.isGas = true
+			}
+			return xfer
 		}
 		xfer := &transfer{
 			amount: big.NewInt(amount),
@@ -1014,7 +1049,36 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 		)
 		return nil
 	}
-	xfer.amount = amount
+	if amount.Uint64()%constants.GWei != 0 {
+		elem := reflect.ValueOf(elems[4])
+		if elem.Kind() != reflect.String {
+			log.Errorf(
+				"Ignoring event for txn %s at height %d: type(state[4]) != string",
+				info.TxHash.ToHexString(), height,
+			)
+			return nil
+		}
+		val, err := hex.DecodeString(elem.String())
+		if err != nil {
+			log.Errorf(
+				"Failed to decode state[5] for txn %s at height %d: %s",
+				info.TxHash.ToHexString(), height, err,
+			)
+			return nil
+		}
+		value := common.BigIntFromNeoBytes(val)
+		if value.Cmp(big.NewInt(0)) == -1 {
+			log.Errorf(
+				"Transfer amount for txn %s at height %d outside of expected range: %v",
+				info.TxHash.ToHexString(), height, value,
+			)
+			return nil
+		}
+		totalAmount := &big.Int{}
+		xfer.amount = totalAmount.Add(amount, value)
+	} else {
+		xfer.amount = amount
+	}
 	return xfer
 }
 
