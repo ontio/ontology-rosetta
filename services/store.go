@@ -975,8 +975,8 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 				)
 			}
 			res := big.NewInt(int64(amount))
-			res.Add(res,big.NewInt(constants.GWei))
-			res.Add(res,big.NewInt(int64(value)))
+			res.Mul(res, big.NewInt(constants.GWei))
+			res.Add(res, big.NewInt(int64(value)))
 			xfer := &transfer{
 				amount: res,
 				from:   from,
