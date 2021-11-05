@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ontio/ontology/common/constants"
 	"github.com/coinbase/rosetta-sdk-go/storage/modules"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/ontio/ontology/common"
@@ -47,7 +48,7 @@ func main() {
 			Address: addr.ToBase58(),
 		},
 		Currency: &types.Currency{
-			Decimals: 9,
+			Decimals: constants.ONG_DECIMALS_V2,
 			Metadata: map[string]interface{}{
 				"contract": "0200000000000000000000000000000000000000",
 			},

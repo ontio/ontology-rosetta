@@ -763,7 +763,7 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 		ongAddr: {
 			contract: ongAddr,
 			currency: &types.Currency{
-				Decimals: constants.ONG_DECIMALS,
+				Decimals: constants.ONG_DECIMALS_V2,
 				Symbol:   constants.ONG_SYMBOL,
 				Metadata: map[string]interface{}{
 					"contract": ongAddr.ToHexString(),
@@ -773,7 +773,7 @@ func NewStore(dir string, oep4 []*OEP4Token, offline bool) (*Store, error) {
 		ontAddr: {
 			contract: ontAddr,
 			currency: &types.Currency{
-				Decimals: constants.ONT_DECIMALS,
+				Decimals: constants.ONT_DECIMALS_V2,
 				Symbol:   constants.ONT_SYMBOL,
 				Metadata: map[string]interface{}{
 					"contract": ontAddr.ToHexString(),
