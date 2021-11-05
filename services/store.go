@@ -1108,7 +1108,7 @@ func parseEvmOngTransferLog(ethLog *ctypes.StorageLog, parsedAbi abi.ABI, gasCon
 			from:   common.Address(tf.From),
 			to:     common.Address(tf.To),
 		}
-		if tf.To == GOV_ADDR && tf.Value.Uint64() == gasConsumed {
+		if tf.To == GOV_ADDR && tf.Value.Uint64()/constants.GWei == gasConsumed {
 			xfer.isGas = true
 		}
 		return xfer, nil
