@@ -936,7 +936,7 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 			return nil
 		}
 		raw := rv.Interface().(json.Number)
-		amount, err := raw.Float64()
+		amount, err := raw.Int64()
 		if err != nil {
 			log.Warnf(
 				"Unable to decode transfer amount %q for txn %s at height %d: %s",
@@ -960,7 +960,7 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 				return nil
 			}
 			raw := rv.Interface().(json.Number)
-			value, err := raw.Float64()
+			value, err := raw.Int64()
 			if err != nil {
 				log.Warnf(
 					"Unable to decode transfer value %q for txn %s at height %d: %s",
@@ -974,9 +974,8 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 					info.TxHash.ToHexString(), height, value,
 				)
 			}
-			res := big.NewInt(int64(amount))
-			res.Mul(res, big.NewInt(constants.GWei))
-			res.Add(res, big.NewInt(int64(value)))
+			res := big.NewInt(0).Mul(big.NewInt(amount), big.NewInt(constants.GWei))
+			res.Add(res, big.NewInt(value))
 			xfer := &transfer{
 				amount: res,
 				from:   from,
@@ -988,7 +987,7 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 			return xfer
 		}
 		xfer := &transfer{
-			amount: big.NewInt(int64(amount)),
+			amount: big.NewInt(amount),
 			from:   from,
 			to:     to,
 		}
