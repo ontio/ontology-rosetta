@@ -391,23 +391,23 @@ Sample Response:
   "balances": [
     {
       "currency": {
-        "decimals": 0,
+        "decimals": 9,
         "metadata": {
           "contract": "0100000000000000000000000000000000000000"
         },
         "symbol": "ONT"
       },
-      "value": "50"
+      "value": "50000000000"
     },
     {
       "currency": {
-        "decimals": 9,
+        "decimals": 18,
         "metadata": {
           "contract": "0200000000000000000000000000000000000000"
         },
         "symbol": "ONG"
       },
-      "value": "99900000000"
+      "value": "99900000000000000000"
     }
   ],
   "block_identifier": {
@@ -464,10 +464,10 @@ Sample Response:
               "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV"
             },
             "amount": {
-              "value": "-9438053292451530",
+              "value": "-9438053292451530000000000",
               "currency": {
                 "symbol": "ONG",
-                "decimals": 9,
+                "decimals": 18,
                 "metadata": {
                   "contract": "0200000000000000000000000000000000000000"
                 }
@@ -489,10 +489,10 @@ Sample Response:
               "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
             },
             "amount": {
-              "value": "9438053292451530",
+              "value": "9438053292451530000000000",
               "currency": {
                 "symbol": "ONG",
-                "decimals": 9,
+                "decimals": 18,
                 "metadata": {
                   "contract": "0200000000000000000000000000000000000000"
                 }
@@ -509,10 +509,10 @@ Sample Response:
               "address": "AHmwjZ58TLsH5dhvBkAEnsZ2tY9XeDPLXD"
             },
             "amount": {
-              "value": "-10000000",
+              "value": "-10000000000000000",
               "currency": {
                 "symbol": "ONG",
-                "decimals": 9,
+                "decimals": 18,
                 "metadata": {
                   "contract": "0200000000000000000000000000000000000000"
                 }
@@ -534,10 +534,10 @@ Sample Response:
               "address": "AFmseVrdL9f9oyCzZefL9tG6UbviEH9ugK"
             },
             "amount": {
-              "value": "10000000",
+              "value": "10000000000000000",
               "currency": {
                 "symbol": "ONG",
-                "decimals": 9,
+                "decimals": 18,
                 "metadata": {
                   "contract": "0200000000000000000000000000000000000000"
                 }
@@ -589,7 +589,7 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONG",
-            "decimals": 9,
+            "decimals": 18,
             "metadata": {
               "contract": "0200000000000000000000000000000000000000"
             }
@@ -609,7 +609,7 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONG",
-            "decimals": 9,
+            "decimals": 18,
             "metadata": {
               "contract": "0200000000000000000000000000000000000000"
             }
@@ -634,7 +634,7 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONG",
-            "decimals": 9,
+            "decimals": 18,
             "metadata": {
               "contract": "0200000000000000000000000000000000000000"
             }
@@ -654,7 +654,7 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONG",
-            "decimals": 9,
+            "decimals": 18,
             "metadata": {
               "contract": "0200000000000000000000000000000000000000"
             }
@@ -733,10 +733,10 @@ Request:
         "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
       },
       "amount": {
-        "value": "-1",
+        "value": "-1000000000",
         "currency": {
           "symbol": "ONT",
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           }
@@ -757,10 +757,10 @@ Request:
         "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
       },
       "amount": {
-        "value": "1",
+        "value": "1000000000",
         "currency": {
           "symbol": "ONT",
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           }
@@ -847,10 +847,10 @@ Request:
         "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
       },
       "amount": {
-        "value": "-1",
+        "value": "-1000000000",
         "currency": {
           "symbol": "ONT",
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           }
@@ -871,10 +871,10 @@ Request:
         "address": "AGgdDesVBCBwNaVtEXX5LYaNckXv8qnC8d"
       },
       "amount": {
-        "value": "1",
+        "value": "1000000000",
         "currency": {
           "symbol": "ONT",
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           }
@@ -940,13 +940,13 @@ Sample Response:
       },
       "amount": {
         "currency": {
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           },
           "symbol": "ONT"
         },
-        "value": "-1"
+        "value": "-1000000000"
       },
       "operation_identifier": {
         "index": 0
@@ -959,13 +959,13 @@ Sample Response:
       },
       "amount": {
         "currency": {
-          "decimals": 0,
+          "decimals": 9,
           "metadata": {
             "contract": "0100000000000000000000000000000000000000"
           },
           "symbol": "ONT"
         },
-        "value": "1"
+        "value": "1000000000"
       },
       "operation_identifier": {
         "index": 1
@@ -1130,12 +1130,12 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONT",
-            "decimals": 0,
+            "decimals": 9,
             "metadata": {
               "contract": "0100000000000000000000000000000000000000"
             }
           },
-          "value": "-1"
+          "value": "-1000000000"
         },
         "operation_identifier": {
           "index": 0
@@ -1149,12 +1149,12 @@ Sample Response:
         "amount": {
           "currency": {
             "symbol": "ONT",
-            "decimals": 0,
+            "decimals": 9,
             "metadata": {
               "contract": "0100000000000000000000000000000000000000"
             }
           },
-          "value": "1"
+          "value": "1000000000"
         },
         "operation_identifier": {
           "index": 1
