@@ -4,5 +4,5 @@ go 1.16
 
 require (
 	github.com/coinbase/rosetta-sdk-go v0.6.10
-	github.com/ontio/ontology v1.14.0-beta
+	github.com/ontio/ontology v1.14.1-alpha
 )
