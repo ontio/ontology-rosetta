@@ -1050,6 +1050,8 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 		)
 		return nil
 	}
+	xfer.amount = amount
+	/*
 	if amount.Uint64()%constants.GWei != 0 {
 		elem := reflect.ValueOf(elems[4])
 		if elem.Kind() != reflect.String {
@@ -1080,6 +1082,7 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 	} else {
 		xfer.amount = amount
 	}
+	 */
 	return xfer
 }
 
