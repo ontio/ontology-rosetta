@@ -986,8 +986,9 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 			}
 			return xfer
 		}
+		res := big.NewInt(0).Mul(big.NewInt(amount), big.NewInt(constants.GWei))
 		xfer := &transfer{
-			amount: big.NewInt(amount),
+			amount: res,
 			from:   from,
 			to:     to,
 		}
