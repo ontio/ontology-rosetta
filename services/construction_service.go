@@ -512,7 +512,7 @@ func (s *service) constructTransfer(opts *model.ConstructOptions) (*ctypes.Trans
 			Amount: amount,
 		}}
 		code, err = utils.BuildNativeInvokeCode(
-			contract, 0, "transfer", []interface{}{params},
+			contract, 0, "transferV2", []interface{}{params},
 		)
 	} else if cinfo.wasm {
 		// TODO(tav): The params need to be verified for WASM contracts.

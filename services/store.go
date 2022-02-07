@@ -1052,37 +1052,37 @@ func decodeTransfer(height uint32, info *event.ExecuteNotify, evt *event.NotifyE
 	}
 	xfer.amount = amount
 	/*
-	if amount.Uint64()%constants.GWei != 0 {
-		elem := reflect.ValueOf(elems[4])
-		if elem.Kind() != reflect.String {
-			log.Errorf(
-				"Ignoring event for txn %s at height %d: type(state[4]) != string",
-				info.TxHash.ToHexString(), height,
-			)
-			return nil
+		if amount.Uint64()%constants.GWei != 0 {
+			elem := reflect.ValueOf(elems[4])
+			if elem.Kind() != reflect.String {
+				log.Errorf(
+					"Ignoring event for txn %s at height %d: type(state[4]) != string",
+					info.TxHash.ToHexString(), height,
+				)
+				return nil
+			}
+			val, err := hex.DecodeString(elem.String())
+			if err != nil {
+				log.Errorf(
+					"Failed to decode state[5] for txn %s at height %d: %s",
+					info.TxHash.ToHexString(), height, err,
+				)
+				return nil
+			}
+			value := common.BigIntFromNeoBytes(val)
+			if value.Cmp(big.NewInt(0)) == -1 {
+				log.Errorf(
+					"Transfer amount for txn %s at height %d outside of expected range: %v",
+					info.TxHash.ToHexString(), height, value,
+				)
+				return nil
+			}
+			totalAmount := &big.Int{}
+			xfer.amount = totalAmount.Add(amount, value)
+		} else {
+			xfer.amount = amount
 		}
-		val, err := hex.DecodeString(elem.String())
-		if err != nil {
-			log.Errorf(
-				"Failed to decode state[5] for txn %s at height %d: %s",
-				info.TxHash.ToHexString(), height, err,
-			)
-			return nil
-		}
-		value := common.BigIntFromNeoBytes(val)
-		if value.Cmp(big.NewInt(0)) == -1 {
-			log.Errorf(
-				"Transfer amount for txn %s at height %d outside of expected range: %v",
-				info.TxHash.ToHexString(), height, value,
-			)
-			return nil
-		}
-		totalAmount := &big.Int{}
-		xfer.amount = totalAmount.Add(amount, value)
-	} else {
-		xfer.amount = amount
-	}
-	 */
+	*/
 	return xfer
 }
 
