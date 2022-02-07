@@ -140,10 +140,10 @@ func parseSys(s *neovm.ValueStack) ([]*Transfer, common.Address, error) {
 		return nil, nilAddr, fmt.Errorf("chain: failed to get method: %s", err)
 	}
 	switch string(meth) {
-	case "transfer":
+	case "transfer", "transferV2":
 		xfers, err := parseSysTransfers(s)
 		return xfers, contract, err
-	case "transferFrom":
+	case "transferFrom", "transferFromV2":
 		xfer, err := parseSysTransferFrom(s)
 		if err != nil {
 			return nil, contract, err
