@@ -1,0 +1,39 @@
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - cicd
+
+
+jobs:
+
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: command
+      run: |
+        which goimports || go get -v golang.org/x/tools/cmd/goimports
+
+        unset dirs files
+        dirs=$(go list -f {{.Dir}} ./... )
+
+        for d in $dirs
+        do
+            for f in $d/*.go
+            do
+                files="${files} $f"
+            done
+        done
+
+        diff <(goimports -d $files) <(echo -n)
+        # test
+        go test -v ./...
