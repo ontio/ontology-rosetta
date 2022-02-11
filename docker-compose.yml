@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  ontology-rosetta:
+    image: ontology/ontology-rosetta
+    build:
+      # when you have big Chain dir in `pwd`, try change context and docker file path
+      # e.g. you can change context to ./build, and dockerfile to ../Dockerfile
+      context: ./
+      dockerfile: ./Dockerfile
+    environment:
+        # default to polaris
+        NETWORK_ID: 2
+    ports:
+      # change host port if 8080 is already used
+      - 8080:8080
+    volumes:
+      - datavolume:/data
+      - ${PWD}/server-config.json/:/data/server-config.json
+volumes:
+  datavolume: {}
