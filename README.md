@@ -14,17 +14,14 @@ make docker
 
 ## Run docker image
 
-There are two volumes to mount into the ontology-rosetta container, one is for saving blocks, the other is for the config file.
 
 ```sh
-# please make sure you have enough disk space for Chain dir
-mkdir Chain
-# you are using the default config in this repo
-docker run --name ont-rosetta -d -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath server-config.json):/data/server-config.json -p 9090:8080 ontology-rosetta:latest
+docker-compse up -d
+docker-compose stop
 ```
-If you want to connect to testnet, set env `NETWORK_ID` value to `2`.
+If you want to connect to mainnet, set env `NETWORK_ID` value to `1` in `docker-compose.yml` file(default to testnet value 2).Don't mix the testnet and mainnet Chain data, you need to create a new volume for mainnet.
 ```sh
-docker run --name ont-rosetta -d --env NETWORK_ID=2 -v $(realpath Log):/data/Log -v $(realpath Chain):/data/Chain -v $(realpath server-config.json):/data/server-config.json -p 9090:8080 ontology-rosetta:latest
+docker-compose down -v
 ```
 
 ## Config
