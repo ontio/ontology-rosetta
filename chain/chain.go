@@ -66,14 +66,14 @@ func Exec(contract common.Address, method string, params []interface{}) (*states
 
 // NativeBalanceOf calls a contract's balanceOf method for the given account.
 func NativeBalanceOf(acct common.Address, contract common.Address) (*big.Int, error) {
-	r, err := NativeExec(contract, "balanceOf", []interface{}{acct[:]})
+	r, err := NativeExec(contract, "balanceOfV2", []interface{}{acct[:]})
 	if err != nil {
 		return nil, err
 	}
 	raw, ok := r.Result.(string)
 	if !ok {
 		return nil, fmt.Errorf(
-			`chain: unexpected "balanceOf" response type: %s`,
+			`chain: unexpected "balanceOfV2" response type: %s`,
 			reflect.TypeOf(r),
 		)
 	}
