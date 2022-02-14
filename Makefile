@@ -29,7 +29,7 @@ rosetta-node-darwin:
 all-cross: rosetta-node-cross
 
 docker:
-	docker build --no-cache -t $(DOCKER_IMAGE_NAME):$(DOCKER_VERSION) .
+	docker-compose build
 
 format:
 	$(GOFMT) -w main.go
