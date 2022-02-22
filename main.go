@@ -29,6 +29,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ontio/ontology/common/constants"
+
 	"github.com/ethereum/go-ethereum/common/fdlimit"
 	eventbus "github.com/ontio/ontology-eventbus/log"
 	"github.com/ontio/ontology-rosetta/log"
@@ -144,6 +146,7 @@ func cliBool(ctx *cli.Context, flag cli.Flag) bool {
 
 func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 	events.Init()
+	constants.BLOCKHEIGHT_ADD_DECIMALS_MAINNET = 0
 	bookKeepers, err := config.DefConfig.GetBookkeepers()
 	if err != nil {
 		log.Errorf("GetBookkeepers error: %s", err)
