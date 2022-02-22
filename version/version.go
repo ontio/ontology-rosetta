@@ -20,6 +20,6 @@
 package version
 
 const (
-	Node    = "v1.14.0-beta"
-	Rosetta = "1.13.5"
+	Node    = "v1.14.1"
+	Rosetta = "1.14"
 )
