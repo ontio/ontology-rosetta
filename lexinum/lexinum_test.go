@@ -11,7 +11,7 @@ import (
 
 func TestEncoding(t *testing.T) {
 	prev := []byte{}
-	for i := uint32(0); i < math.MaxUint32; i++ {
+	for i := uint32(0); i < math.MaxUint16; i++ {
 		enc := EncodeHeight(i)
 		cmp := bytes.Compare(enc, prev)
 		if cmp != 1 {
