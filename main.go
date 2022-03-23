@@ -156,7 +156,8 @@ func initLedger(ctx *cli.Context, cfg *config.OntologyConfig) *ledger.Ledger {
 	if err != nil {
 		log.Errorf("genesisBlock error %s", err)
 	}
-	ldg, err := ledger.InitLedger(cfg.Common.DataDir, config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId), bookKeepers, genesisBlock)
+	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName)
+	ldg, err := ledger.InitLedger(dbDir, config.GetStateHashCheckHeight(cfg.P2PNode.NetworkId), bookKeepers, genesisBlock)
 	if err != nil {
 		log.Fatalf("Failed to open ledger: %s", err)
 	}
@@ -326,8 +327,9 @@ func initServerConfig(ctx *cli.Context) *serverConfig {
 }
 
 func initStore(cfg *config.OntologyConfig, scfg *serverConfig, offline bool) *services.Store {
+	dbDir := utils.GetStoreDirPath(config.DefConfig.Common.DataDir, config.DefConfig.P2PNode.NetworkName)
 	store, err := services.NewStore(filepath.Join(
-		cfg.Common.DataDir,
+		dbDir,
 		cfg.P2PNode.NetworkName,
 		"store",
 	), scfg.tokens, offline)
